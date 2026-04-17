@@ -7,6 +7,8 @@ import { eq } from 'drizzle-orm';
 import { hashPassword } from '../../core/users/passwords.js';
 import { record } from '../../core/audit/log.js';
 import { requireRole } from '../../middleware/rbac.js';
+import { seedWelcomeCredit } from '../../core/users/ledger.js';
+import { getSetting } from '../../core/settings/index.js';
 
 const CreateSchema = z.object({
   email: z.string().email(),
@@ -56,6 +58,12 @@ export async function registerAdminUsers(app: FastifyInstance): Promise<void> {
       })
       .returning();
     if (!row) return reply.code(500).send({ error: 'insert_failed' });
+    // Seed welcome credit for consumers created via admin UI, same as
+    // self-registration flow.
+    if (row.role === 'consumer') {
+      const welcome = Number(await getSetting('pricing.welcomeCreditMud')) || 0;
+      if (welcome > 0) await seedWelcomeCredit(row.id, welcome).catch(() => {});
+    }
     await record(req, {
       action: 'user.create',
       entityType: 'user',

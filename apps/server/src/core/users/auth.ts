@@ -39,6 +39,19 @@ export async function requireApiKey(req: FastifyRequest, reply: FastifyReply): P
     });
   }
   const owner = (await db.select().from(users).where(eq(users.id, key.userId)).limit(1))[0] ?? null;
+  // Balance gate: only `consumer` accounts are charged. Admin + contributor
+  // may use the API without prepaid balance (they operate the gateway).
+  // Hard-cut at <= 0: last request can overshoot by one call since we debit
+  // after the response, but no new requests after that.
+  if (owner && owner.role === 'consumer' && Number(owner.balanceMud) <= 0) {
+    return void reply.code(402).send({
+      type: 'error',
+      error: {
+        type: 'permission_error',
+        message: 'account balance depleted; contact the operator to top up',
+      },
+    });
+  }
   req.apiKey = key;
   req.apiUser = owner;
 }
