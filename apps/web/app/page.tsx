@@ -23,10 +23,10 @@ export default function HomePage() {
           {t('home.signin')}
         </Link>
         <Link
-          href="/dashboard"
+          href={'/register' as never}
           className="rounded-md border border-border px-4 py-2 text-sm font-medium"
         >
-          {t('home.dashboard')}
+          {t('register.submit')}
         </Link>
       </div>
     </main>

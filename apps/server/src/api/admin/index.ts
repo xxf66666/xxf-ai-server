@@ -11,7 +11,7 @@ import { registerAdminUsers } from './users.js';
 
 // Paths under /admin/ that do NOT require a logged-in session:
 // the login endpoint itself (how else would you log in?) and readiness.
-const PUBLIC_PATHS = new Set(['/admin/v1/auth/login']);
+const PUBLIC_PATHS = new Set(['/admin/v1/auth/login', '/admin/v1/auth/register']);
 
 export async function registerAdmin(app: FastifyInstance): Promise<void> {
   app.addHook('preHandler', async (req, reply) => {

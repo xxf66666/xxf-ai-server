@@ -158,6 +158,67 @@ export const en = {
   'settings.models': 'Allowed models',
   'settings.models.desc': 'One per line; leave empty to allow all models.',
   'settings.saveFail': 'save failed',
+
+  // --- register ---
+  'register.title': 'Create account',
+  'register.subtitle': 'Register a consumer account to get API keys.',
+  'register.submit': 'Register',
+  'register.submitting': 'registering…',
+  'register.haveAccount': 'Already have an account?',
+  'register.signin': 'Sign in',
+  'login.noAccount': 'No account yet?',
+  'login.register': 'Register',
+
+  // --- console ---
+  'console.title': 'Console',
+  'console.nav.dashboard': 'Dashboard',
+  'console.nav.keys': 'API Keys',
+  'console.nav.models': 'Models',
+  'console.nav.usage': 'Usage log',
+  'console.nav.settings': 'Settings',
+
+  'console.greeting.morning': 'Good morning',
+  'console.greeting.afternoon': 'Good afternoon',
+  'console.greeting.evening': 'Good evening',
+  'console.greeting.night': 'Good night',
+
+  'console.card.activeKeys': 'Active keys',
+  'console.card.requests24h': 'Requests (24h)',
+  'console.card.tokens24h': 'Tokens (24h)',
+  'console.card.usedMonthly': 'Tokens used (30d)',
+  'console.card.chart': 'Usage — last 24h',
+
+  'console.keys.title': 'My API Keys',
+  'console.keys.subtitle': 'Bearer keys for calling {base}/v1/messages or /v1/chat/completions.',
+  'console.keys.endpoint': 'Endpoint',
+  'console.keys.none': 'No keys yet — mint your first one below.',
+
+  'console.models.title': 'Available models',
+  'console.models.subtitle': 'Models you can pass in the `model` field.',
+  'console.models.col.id': 'Model',
+  'console.models.col.provider': 'Provider',
+  'console.models.col.tier': 'Tier',
+
+  'console.usage.title': 'Usage log',
+  'console.usage.subtitle': 'Most recent 50 requests on your keys.',
+  'console.usage.col.time': 'Time',
+  'console.usage.col.key': 'Key',
+  'console.usage.col.model': 'Model',
+  'console.usage.col.input': 'Input',
+  'console.usage.col.output': 'Output',
+  'console.usage.col.latency': 'Latency',
+  'console.usage.col.status': 'Status',
+  'console.usage.empty': 'No requests yet.',
+
+  'console.settings.title': 'Settings',
+  'console.settings.subtitle': 'Update your account credentials.',
+  'console.settings.email': 'Email',
+  'console.settings.role': 'Role',
+  'console.settings.currentPw': 'Current password',
+  'console.settings.newPw': 'New password',
+  'console.settings.changePw': 'Change password',
+  'console.settings.changing': 'changing…',
+  'console.settings.pwChanged': 'password updated ✓',
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -317,4 +378,65 @@ export const zh: Dict = {
   'settings.models': '允许的模型',
   'settings.models.desc': '每行一个；留空则允许所有模型。',
   'settings.saveFail': '保存失败',
+
+  // --- register ---
+  'register.title': '创建账号',
+  'register.subtitle': '注册消费者账号以获取 API 密钥。',
+  'register.submit': '注册',
+  'register.submitting': '注册中…',
+  'register.haveAccount': '已有账号？',
+  'register.signin': '登录',
+  'login.noAccount': '还没账号？',
+  'login.register': '注册',
+
+  // --- console ---
+  'console.title': '控制台',
+  'console.nav.dashboard': '数据看板',
+  'console.nav.keys': 'API 密钥',
+  'console.nav.models': '可用模型',
+  'console.nav.usage': '使用日志',
+  'console.nav.settings': '个人设置',
+
+  'console.greeting.morning': '早上好',
+  'console.greeting.afternoon': '下午好',
+  'console.greeting.evening': '晚上好',
+  'console.greeting.night': '夜深了',
+
+  'console.card.activeKeys': '可用密钥',
+  'console.card.requests24h': '请求数（24 小时）',
+  'console.card.tokens24h': 'Tokens（24 小时）',
+  'console.card.usedMonthly': '月累计 Tokens',
+  'console.card.chart': '24 小时用量',
+
+  'console.keys.title': '我的 API 密钥',
+  'console.keys.subtitle': '调用 {base}/v1/messages 或 /v1/chat/completions 用的 Bearer key。',
+  'console.keys.endpoint': '接入地址',
+  'console.keys.none': '还没密钥 —— 下面铸一把试试。',
+
+  'console.models.title': '可用模型',
+  'console.models.subtitle': '可以传给 `model` 字段的模型列表。',
+  'console.models.col.id': '模型',
+  'console.models.col.provider': '供应商',
+  'console.models.col.tier': '档次',
+
+  'console.usage.title': '使用日志',
+  'console.usage.subtitle': '最近 50 次请求记录。',
+  'console.usage.col.time': '时间',
+  'console.usage.col.key': '密钥',
+  'console.usage.col.model': '模型',
+  'console.usage.col.input': '输入',
+  'console.usage.col.output': '输出',
+  'console.usage.col.latency': '耗时',
+  'console.usage.col.status': '状态',
+  'console.usage.empty': '还没请求记录。',
+
+  'console.settings.title': '个人设置',
+  'console.settings.subtitle': '修改账号凭据。',
+  'console.settings.email': '邮箱',
+  'console.settings.role': '角色',
+  'console.settings.currentPw': '当前密码',
+  'console.settings.newPw': '新密码',
+  'console.settings.changePw': '修改密码',
+  'console.settings.changing': '修改中…',
+  'console.settings.pwChanged': '密码已更新 ✓',
 };

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/api';
@@ -8,6 +9,16 @@ import { useT } from '../../lib/i18n/context';
 import { LocaleSwitcher } from '../../lib/i18n/LocaleSwitcher';
 
 type Mode = 'password' | 'bootstrap';
+
+interface Me {
+  sub: string;
+  email: string;
+  role: 'admin' | 'contributor' | 'consumer';
+}
+
+function landingFor(role: Me['role']): string {
+  return role === 'consumer' ? '/console/dashboard' : '/dashboard';
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,8 +29,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    void apiFetch('/admin/v1/auth/me')
-      .then(() => router.replace('/dashboard'))
+    void apiFetch<Me>('/admin/v1/auth/me')
+      .then((me) => router.replace(landingFor(me.role) as never))
       .catch(() => {});
   }, [router]);
 
@@ -28,16 +39,19 @@ export default function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
+      let role: Me['role'] = 'consumer';
       if (mode === 'password') {
-        await apiFetch('/admin/v1/auth/login', {
+        const res = await apiFetch<{ role: Me['role'] }>('/admin/v1/auth/login', {
           method: 'POST',
           body: JSON.stringify({ email: form.email, password: form.password }),
         });
+        role = res.role;
       } else {
         await apiFetch('/admin/v1/users', { token: form.token });
         setBootstrapToken(form.token);
+        role = 'admin';
       }
-      router.replace('/dashboard');
+      router.replace(landingFor(role) as never);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('common.unknown'));
     } finally {
@@ -125,6 +139,15 @@ export default function LoginPage() {
         >
           {submitting ? t('login.verifying') : t('login.submit')}
         </button>
+
+        {mode === 'password' && (
+          <div className="text-center text-xs text-muted-foreground">
+            {t('login.noAccount')}{' '}
+            <Link href={'/register' as never} className="text-primary hover:underline">
+              {t('login.register')}
+            </Link>
+          </div>
+        )}
       </form>
     </main>
   );

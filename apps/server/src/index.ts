@@ -14,6 +14,7 @@ import { registerHealth } from './api/health.js';
 import { registerAnthropic } from './api/anthropic/messages.js';
 import { registerOpenAI } from './api/openai/chat.js';
 import { registerAdmin } from './api/admin/index.js';
+import { registerConsole } from './api/console/index.js';
 import { runMigrations } from './db/migrate.js';
 import { startWorkers } from './workers/index.js';
 
@@ -67,6 +68,7 @@ async function main() {
 
   await registerHealth(app);
   await registerAdmin(app);
+  await registerConsole(app);
   await registerAnthropic(app);
   await registerOpenAI(app);
 
