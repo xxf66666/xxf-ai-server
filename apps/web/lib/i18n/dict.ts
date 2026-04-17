@@ -219,6 +219,22 @@ export const en = {
   'console.settings.changePw': 'Change password',
   'console.settings.changing': 'changing…',
   'console.settings.pwChanged': 'password updated ✓',
+
+  // --- console charts ---
+  'console.charts.title': 'Analytics',
+  'console.charts.empty': 'No data in the last 24h yet.',
+  'console.charts.tab.trend': 'Consumption trend',
+  'console.charts.tab.byModel': 'Model distribution',
+  'console.charts.tab.byKey': 'Requests by key',
+  'console.charts.tab.topKeys': 'Top keys',
+  'console.charts.tab.status': 'Status distribution',
+  'console.charts.input': 'Input',
+  'console.charts.output': 'Output',
+  'console.charts.tokens': 'Tokens',
+  'console.charts.requests': 'Requests',
+  'console.charts.model': 'Model',
+  'console.charts.key': 'Key',
+  'console.charts.status': 'Status',
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -439,4 +455,20 @@ export const zh: Dict = {
   'console.settings.changePw': '修改密码',
   'console.settings.changing': '修改中…',
   'console.settings.pwChanged': '密码已更新 ✓',
+
+  // --- console charts ---
+  'console.charts.title': '数据分析',
+  'console.charts.empty': '近 24 小时还没有数据。',
+  'console.charts.tab.trend': '消耗趋势',
+  'console.charts.tab.byModel': '模型分布',
+  'console.charts.tab.byKey': '按密钥分布',
+  'console.charts.tab.topKeys': '密钥排行',
+  'console.charts.tab.status': '状态分布',
+  'console.charts.input': '输入',
+  'console.charts.output': '输出',
+  'console.charts.tokens': 'Tokens',
+  'console.charts.requests': '请求数',
+  'console.charts.model': '模型',
+  'console.charts.key': '密钥',
+  'console.charts.status': '状态',
 };

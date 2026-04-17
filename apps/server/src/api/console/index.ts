@@ -220,6 +220,96 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
     };
   });
 
+  app.get('/v1/console/breakdown', async (req, reply) => {
+    const uid = sessionUser(req);
+    if (!uid) return reply.code(401).send({ error: 'unauth' });
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const myKeys = await db
+      .select({ id: apiKeys.id, name: apiKeys.name })
+      .from(apiKeys)
+      .where(eq(apiKeys.userId, uid));
+    if (myKeys.length === 0) {
+      return { byModel: [], byKey: [], byStatus: [], trend: [] };
+    }
+    const keyIds = myKeys.map((k) => k.id);
+    const keyIdFilter = sql`${usageLog.apiKeyId} IN (${sql.join(
+      keyIds.map((id) => sql`${id}`),
+      sql`, `,
+    )})`;
+    const whereScope = and(gte(usageLog.createdAt, since), keyIdFilter);
+
+    const byModel = await db
+      .select({
+        model: usageLog.model,
+        tokens: sql<string>`coalesce(sum(${usageLog.inputTokens} + ${usageLog.outputTokens}), 0)`,
+        requests: count(),
+      })
+      .from(usageLog)
+      .where(whereScope)
+      .groupBy(usageLog.model);
+
+    const byKey = await db
+      .select({
+        keyId: usageLog.apiKeyId,
+        tokens: sql<string>`coalesce(sum(${usageLog.inputTokens} + ${usageLog.outputTokens}), 0)`,
+        requests: count(),
+      })
+      .from(usageLog)
+      .where(whereScope)
+      .groupBy(usageLog.apiKeyId);
+
+    const byStatus = await db
+      .select({
+        bucket: sql<string>`
+          case
+            when ${usageLog.status} >= 200 and ${usageLog.status} < 300 then '2xx'
+            when ${usageLog.status} >= 300 and ${usageLog.status} < 400 then '3xx'
+            when ${usageLog.status} >= 400 and ${usageLog.status} < 500 then '4xx'
+            when ${usageLog.status} >= 500 then '5xx'
+            else 'other'
+          end`,
+        requests: count(),
+      })
+      .from(usageLog)
+      .where(whereScope)
+      .groupBy(sql`1`);
+
+    const trend = await db
+      .select({
+        ts: sql<string>`date_trunc('hour', ${usageLog.createdAt})`,
+        inputTokens: sql<string>`coalesce(sum(${usageLog.inputTokens}), 0)`,
+        outputTokens: sql<string>`coalesce(sum(${usageLog.outputTokens}), 0)`,
+        requests: count(),
+      })
+      .from(usageLog)
+      .where(whereScope)
+      .groupBy(sql`date_trunc('hour', ${usageLog.createdAt})`)
+      .orderBy(sql`date_trunc('hour', ${usageLog.createdAt})`);
+
+    const keyName = new Map(myKeys.map((k) => [k.id, k.name]));
+    return {
+      byModel: byModel.map((r) => ({
+        model: r.model,
+        tokens: Number(r.tokens),
+        requests: Number(r.requests),
+      })),
+      byKey: byKey.map((r) => ({
+        keyId: r.keyId,
+        keyName: r.keyId ? (keyName.get(r.keyId) ?? null) : null,
+        tokens: Number(r.tokens),
+        requests: Number(r.requests),
+      })),
+      byStatus: byStatus.map((r) => ({ bucket: r.bucket, requests: Number(r.requests) })),
+      trend: trend.map((r) => ({
+        ts: new Date(r.ts).toISOString(),
+        inputTokens: Number(r.inputTokens),
+        outputTokens: Number(r.outputTokens),
+        requests: Number(r.requests),
+      })),
+    };
+  });
+
   app.get('/v1/console/models', async () => {
     const settings = await getAllSettings();
     const allow = Array.isArray(settings['models.allow']) ? (settings['models.allow'] as string[]) : [];
