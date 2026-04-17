@@ -6,16 +6,9 @@ import { useEffect, useState } from 'react';
 import { BarChart3, Boxes, KeyRound, LayoutDashboard, LogOut, Network, Settings, Users } from 'lucide-react';
 import { apiFetch } from '../../lib/api';
 import { clearBootstrapToken } from '../../lib/auth';
-
-const nav = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/accounts', label: 'Accounts', icon: Boxes },
-  { href: '/users', label: 'Users', icon: Users },
-  { href: '/keys', label: 'API keys', icon: KeyRound },
-  { href: '/proxies', label: 'Proxies', icon: Network },
-  { href: '/stats', label: 'Stats', icon: BarChart3 },
-  { href: '/settings', label: 'Settings', icon: Settings },
-] as const;
+import { useT } from '../../lib/i18n/context';
+import { LocaleSwitcher } from '../../lib/i18n/LocaleSwitcher';
+import type { DictKey } from '../../lib/i18n/dict';
 
 interface Me {
   sub: string;
@@ -23,8 +16,19 @@ interface Me {
   role: 'admin' | 'contributor' | 'consumer';
 }
 
+const nav: Array<{ href: string; label: DictKey; icon: typeof LayoutDashboard }> = [
+  { href: '/dashboard', label: 'nav.dashboard', icon: LayoutDashboard },
+  { href: '/accounts', label: 'nav.accounts', icon: Boxes },
+  { href: '/users', label: 'nav.users', icon: Users },
+  { href: '/keys', label: 'nav.keys', icon: KeyRound },
+  { href: '/proxies', label: 'nav.proxies', icon: Network },
+  { href: '/stats', label: 'nav.stats', icon: BarChart3 },
+  { href: '/settings', label: 'nav.settings', icon: Settings },
+];
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const t = useT();
   const [me, setMe] = useState<Me | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -42,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!ready || !me) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
-        loading…
+        {t('common.loading')}
       </div>
     );
   }
@@ -56,22 +60,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-muted/30 p-4">
-        <div className="mb-6 px-2">
-          <div className="text-sm font-semibold">xxf-ai-server</div>
-          <div className="text-xs text-muted-foreground">admin console</div>
+        <div className="mb-6 flex items-start justify-between gap-2 px-2">
+          <div>
+            <div className="text-sm font-semibold">xxf-ai-server</div>
+            <div className="text-xs text-muted-foreground">{t('nav.console')}</div>
+          </div>
+          <LocaleSwitcher />
         </div>
         <nav className="flex-1 space-y-1">
           {nav.map(({ href, label, icon: Icon }) => (
-            // Cast needed because typedRoutes doesn't know about routes
-            // until the first build; we add new pages faster than the cache
-            // regenerates.
             <Link
               key={href}
               href={href as never}
               className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted"
             >
               <Icon className="h-4 w-4" />
-              <span>{label}</span>
+              <span>{t(label)}</span>
             </Link>
           ))}
         </nav>
@@ -86,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted"
           >
             <LogOut className="h-4 w-4" />
-            <span>Sign out</span>
+            <span>{t('nav.signout')}</span>
           </button>
         </div>
       </aside>

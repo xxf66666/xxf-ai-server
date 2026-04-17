@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { apiFetch } from '../../../lib/api';
+import { useT } from '../../../lib/i18n/context';
 
 interface User {
   id: string;
@@ -26,6 +27,7 @@ const fmt = new Intl.NumberFormat();
 
 export default function KeysPage() {
   const qc = useQueryClient();
+  const t = useT();
   const { data: usersData } = useQuery({
     queryKey: ['users'],
     queryFn: () => apiFetch<{ data: User[] }>('/admin/v1/users'),
@@ -65,21 +67,19 @@ export default function KeysPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">API keys</h1>
-        <p className="text-sm text-muted-foreground">
-          Bearer keys clients (Claude Code, Cline, Cursor) use to call the gateway.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('keys.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('keys.subtitle')}</p>
       </div>
 
       {users.length === 0 ? (
         <div className="rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">
-          Create a user first, then mint keys for them.
+          {t('keys.empty.noUsers')}
         </div>
       ) : (
         <>
           <div className="flex items-end gap-3">
             <label className="flex-1 space-y-1 text-sm">
-              <span className="text-xs font-medium">Owner</span>
+              <span className="text-xs font-medium">{t('keys.owner')}</span>
               <select
                 value={activeUser}
                 onChange={(e) => setSelectedUser(e.target.value)}
@@ -102,11 +102,11 @@ export default function KeysPage() {
             className="flex flex-wrap items-end gap-3 rounded-lg border border-border p-4"
           >
             <label className="flex-1 space-y-1 text-sm">
-              <span className="text-xs font-medium">Name</span>
+              <span className="text-xs font-medium">{t('keys.form.name')}</span>
               <input
                 value={mintName}
                 onChange={(e) => setMintName(e.target.value)}
-                placeholder="e.g. cline-laptop"
+                placeholder={t('keys.form.name.placeholder')}
                 required
                 className="w-full rounded-md border border-border bg-background px-2 py-1.5"
               />
@@ -116,13 +116,13 @@ export default function KeysPage() {
               disabled={mint.isPending}
               className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
             >
-              {mint.isPending ? 'minting…' : 'Mint key'}
+              {mint.isPending ? t('keys.form.minting') : t('keys.form.mint')}
             </button>
           </form>
 
           {lastMinted && (
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-              <div className="font-medium">Copy this key now — it won't be shown again:</div>
+              <div className="font-medium">{t('keys.minted.title')}</div>
               <div className="mt-2 flex items-center gap-2">
                 <code className="flex-1 break-all rounded bg-white px-2 py-1 font-mono text-xs">{lastMinted}</code>
                 <button
@@ -130,14 +130,14 @@ export default function KeysPage() {
                   onClick={() => navigator.clipboard.writeText(lastMinted)}
                   className="rounded border border-amber-400 px-2 py-1 text-xs hover:bg-amber-100"
                 >
-                  Copy
+                  {t('common.copy')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setLastMinted(null)}
                   className="rounded border border-amber-400 px-2 py-1 text-xs hover:bg-amber-100"
                 >
-                  Dismiss
+                  {t('common.dismiss')}
                 </button>
               </div>
             </div>
@@ -147,10 +147,10 @@ export default function KeysPage() {
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-left text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-2 font-medium">Name</th>
-                  <th className="px-4 py-2 font-medium">Key</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
-                  <th className="px-4 py-2 font-medium text-right">Used</th>
+                  <th className="px-4 py-2 font-medium">{t('keys.col.name')}</th>
+                  <th className="px-4 py-2 font-medium">{t('keys.col.key')}</th>
+                  <th className="px-4 py-2 font-medium">{t('keys.col.status')}</th>
+                  <th className="px-4 py-2 font-medium text-right">{t('keys.col.used')}</th>
                   <th className="px-4 py-2"></th>
                 </tr>
               </thead>
@@ -158,7 +158,7 @@ export default function KeysPage() {
                 {isLoading && (
                   <tr>
                     <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
-                      loading…
+                      {t('common.loading')}
                     </td>
                   </tr>
                 )}
@@ -181,11 +181,11 @@ export default function KeysPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            if (confirm(`Revoke ${k.name}?`)) revoke.mutate(k.id);
+                            if (confirm(t('keys.confirm.revoke', { name: k.name }))) revoke.mutate(k.id);
                           }}
                           className="text-xs text-red-600 hover:underline"
                         >
-                          Revoke
+                          {t('common.revoke')}
                         </button>
                       )}
                     </td>

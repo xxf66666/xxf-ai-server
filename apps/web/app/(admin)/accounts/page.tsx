@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { apiFetch } from '../../../lib/api';
+import { useT } from '../../../lib/i18n/context';
 
 interface Account {
   id: string;
@@ -36,6 +37,7 @@ const statusColor: Record<string, string> = {
 
 export default function AccountsPage() {
   const qc = useQueryClient();
+  const t = useT();
   const [showForm, setShowForm] = useState(false);
 
   const { data, isLoading } = useQuery({
@@ -69,15 +71,15 @@ export default function AccountsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Accounts</h1>
-          <p className="text-sm text-muted-foreground">Subscription accounts in the pool.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t('accounts.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('accounts.subtitle')}</p>
         </div>
         <button
           type="button"
           onClick={() => setShowForm(true)}
           className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
         >
-          Attach account
+          {t('accounts.attach')}
         </button>
       </div>
 
@@ -89,12 +91,12 @@ export default function AccountsPage() {
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-left text-muted-foreground">
             <tr>
-              <th className="px-4 py-2 font-medium">Label</th>
-              <th className="px-4 py-2 font-medium">Provider</th>
-              <th className="px-4 py-2 font-medium">Plan</th>
-              <th className="px-4 py-2 font-medium">Shared</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium text-right">Window</th>
+              <th className="px-4 py-2 font-medium">{t('accounts.col.label')}</th>
+              <th className="px-4 py-2 font-medium">{t('accounts.col.provider')}</th>
+              <th className="px-4 py-2 font-medium">{t('accounts.col.plan')}</th>
+              <th className="px-4 py-2 font-medium">{t('accounts.col.shared')}</th>
+              <th className="px-4 py-2 font-medium">{t('accounts.col.status')}</th>
+              <th className="px-4 py-2 font-medium text-right">{t('accounts.col.window')}</th>
               <th className="px-4 py-2"></th>
             </tr>
           </thead>
@@ -102,23 +104,25 @@ export default function AccountsPage() {
             {isLoading && (
               <tr>
                 <td className="px-4 py-6 text-center text-muted-foreground" colSpan={7}>
-                  loading…
+                  {t('common.loading')}
                 </td>
               </tr>
             )}
             {!isLoading && (data?.data.length ?? 0) === 0 && (
               <tr>
                 <td className="px-4 py-6 text-center text-muted-foreground" colSpan={7}>
-                  No accounts yet.
+                  {t('accounts.empty')}
                 </td>
               </tr>
             )}
             {data?.data.map((a) => (
               <tr key={a.id} className="border-t border-border">
-                <td className="px-4 py-2">{a.label ?? <span className="text-muted-foreground">—</span>}</td>
+                <td className="px-4 py-2">
+                  {a.label ?? <span className="text-muted-foreground">{t('common.dash')}</span>}
+                </td>
                 <td className="px-4 py-2">{a.provider}</td>
                 <td className="px-4 py-2">{a.plan}</td>
-                <td className="px-4 py-2">{a.shared ? 'yes' : 'no'}</td>
+                <td className="px-4 py-2">{a.shared ? t('common.yes') : t('common.no')}</td>
                 <td className="px-4 py-2">
                   <span className={`rounded-full px-2 py-0.5 text-xs ${statusColor[a.status] ?? 'bg-muted'}`}>
                     {a.status}
@@ -132,16 +136,16 @@ export default function AccountsPage() {
                     disabled={probe.isPending}
                     className="text-xs text-primary hover:underline disabled:opacity-60"
                   >
-                    Probe
+                    {t('accounts.action.probe')}
                   </button>
                   <button
                     type="button"
                     onClick={() => {
-                      if (confirm(`Detach ${a.label ?? a.id}?`)) del.mutate(a.id);
+                      if (confirm(t('accounts.confirm.detach', { name: a.label ?? a.id }))) del.mutate(a.id);
                     }}
                     className="text-xs text-red-600 hover:underline"
                   >
-                    Detach
+                    {t('accounts.action.detach')}
                   </button>
                 </td>
               </tr>
@@ -155,6 +159,7 @@ export default function AccountsPage() {
 
 function AttachForm({ users, onClose }: { users: User[]; onClose: () => void }) {
   const qc = useQueryClient();
+  const t = useT();
   const [form, setForm] = useState({
     provider: 'claude',
     plan: 'max20x',
@@ -184,7 +189,7 @@ function AttachForm({ users, onClose }: { users: User[]; onClose: () => void }) 
       qc.invalidateQueries({ queryKey: ['accounts'] });
       onClose();
     },
-    onError: (err) => setError(err instanceof Error ? err.message : 'failed'),
+    onError: (err) => setError(err instanceof Error ? err.message : t('common.unknown')),
   });
 
   return (
@@ -197,7 +202,7 @@ function AttachForm({ users, onClose }: { users: User[]; onClose: () => void }) 
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1 text-sm">
-          <span className="text-xs font-medium">Provider</span>
+          <span className="text-xs font-medium">{t('accounts.attach.provider')}</span>
           <select
             value={form.provider}
             onChange={(e) => setForm({ ...form, provider: e.target.value })}
@@ -208,7 +213,7 @@ function AttachForm({ users, onClose }: { users: User[]; onClose: () => void }) 
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-xs font-medium">Plan</span>
+          <span className="text-xs font-medium">{t('accounts.attach.plan')}</span>
           <select
             value={form.plan}
             onChange={(e) => setForm({ ...form, plan: e.target.value })}
@@ -222,7 +227,7 @@ function AttachForm({ users, onClose }: { users: User[]; onClose: () => void }) 
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-xs font-medium">Label</span>
+          <span className="text-xs font-medium">{t('accounts.attach.label')}</span>
           <input
             value={form.label}
             onChange={(e) => setForm({ ...form, label: e.target.value })}
@@ -230,13 +235,13 @@ function AttachForm({ users, onClose }: { users: User[]; onClose: () => void }) 
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-xs font-medium">Owner</span>
+          <span className="text-xs font-medium">{t('accounts.attach.owner')}</span>
           <select
             value={form.ownerUserId}
             onChange={(e) => setForm({ ...form, ownerUserId: e.target.value })}
             className="w-full rounded-md border border-border bg-background px-2 py-1.5"
           >
-            <option value="">(none)</option>
+            <option value="">{t('common.none')}</option>
             {users.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.email}
@@ -251,10 +256,10 @@ function AttachForm({ users, onClose }: { users: User[]; onClose: () => void }) 
           checked={form.shared}
           onChange={(e) => setForm({ ...form, shared: e.target.checked })}
         />
-        Shared with pool
+        {t('accounts.attach.shared')}
       </label>
       <label className="block space-y-1 text-sm">
-        <span className="text-xs font-medium">OAuth access token</span>
+        <span className="text-xs font-medium">{t('accounts.attach.accessToken')}</span>
         <textarea
           rows={2}
           value={form.oauthAccessToken}
@@ -265,7 +270,7 @@ function AttachForm({ users, onClose }: { users: User[]; onClose: () => void }) 
         />
       </label>
       <label className="block space-y-1 text-sm">
-        <span className="text-xs font-medium">OAuth refresh token (optional)</span>
+        <span className="text-xs font-medium">{t('accounts.attach.refreshToken')}</span>
         <textarea
           rows={2}
           value={form.oauthRefreshToken}
@@ -276,14 +281,14 @@ function AttachForm({ users, onClose }: { users: User[]; onClose: () => void }) 
       {error && <div className="text-xs text-red-700">{error}</div>}
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onClose} className="rounded-md border border-border px-3 py-1.5 text-sm">
-          Cancel
+          {t('common.cancel')}
         </button>
         <button
           type="submit"
           disabled={attach.isPending}
           className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
         >
-          {attach.isPending ? 'attaching…' : 'Attach'}
+          {attach.isPending ? t('accounts.attach.submitting') : t('accounts.attach.submit')}
         </button>
       </div>
     </form>

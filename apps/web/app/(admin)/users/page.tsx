@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { apiFetch } from '../../../lib/api';
+import { useT } from '../../../lib/i18n/context';
 
 interface User {
   id: string;
@@ -13,6 +14,7 @@ interface User {
 
 export default function UsersPage() {
   const qc = useQueryClient();
+  const t = useT();
   const { data, isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: () => apiFetch<{ data: User[] }>('/admin/v1/users'),
@@ -35,10 +37,8 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
-        <p className="text-sm text-muted-foreground">
-          Downstream consumers + account contributors. Argon2 passwords land in a later phase.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('users.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('users.subtitle')}</p>
       </div>
 
       <form
@@ -49,7 +49,7 @@ export default function UsersPage() {
         className="flex flex-wrap items-end gap-3 rounded-lg border border-border p-4"
       >
         <label className="flex-1 space-y-1 text-sm">
-          <span className="text-xs font-medium">Email</span>
+          <span className="text-xs font-medium">{t('users.form.email')}</span>
           <input
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -60,15 +60,15 @@ export default function UsersPage() {
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-xs font-medium">Role</span>
+          <span className="text-xs font-medium">{t('users.form.role')}</span>
           <select
             value={form.role}
             onChange={(e) => setForm({ ...form, role: e.target.value })}
             className="rounded-md border border-border bg-background px-2 py-1.5"
           >
-            <option value="consumer">consumer</option>
-            <option value="contributor">contributor</option>
-            <option value="admin">admin</option>
+            <option value="consumer">{t('users.role.consumer')}</option>
+            <option value="contributor">{t('users.role.contributor')}</option>
+            <option value="admin">{t('users.role.admin')}</option>
           </select>
         </label>
         <button
@@ -76,7 +76,7 @@ export default function UsersPage() {
           disabled={create.isPending}
           className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
         >
-          {create.isPending ? 'creating…' : 'Create user'}
+          {create.isPending ? t('common.creating') : t('users.form.create')}
         </button>
       </form>
 
@@ -84,9 +84,9 @@ export default function UsersPage() {
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-left text-muted-foreground">
             <tr>
-              <th className="px-4 py-2 font-medium">Email</th>
-              <th className="px-4 py-2 font-medium">Role</th>
-              <th className="px-4 py-2 font-medium">Created</th>
+              <th className="px-4 py-2 font-medium">{t('users.col.email')}</th>
+              <th className="px-4 py-2 font-medium">{t('users.col.role')}</th>
+              <th className="px-4 py-2 font-medium">{t('users.col.created')}</th>
               <th className="px-4 py-2"></th>
             </tr>
           </thead>
@@ -94,7 +94,7 @@ export default function UsersPage() {
             {isLoading && (
               <tr>
                 <td className="px-4 py-6 text-center text-muted-foreground" colSpan={4}>
-                  loading…
+                  {t('common.loading')}
                 </td>
               </tr>
             )}
@@ -109,11 +109,11 @@ export default function UsersPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (confirm(`Delete ${u.email}?`)) del.mutate(u.id);
+                      if (confirm(t('users.confirm.delete', { email: u.email }))) del.mutate(u.id);
                     }}
                     className="text-xs text-red-600 hover:underline"
                   >
-                    Delete
+                    {t('common.delete')}
                   </button>
                 </td>
               </tr>

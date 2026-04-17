@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { apiFetch } from '../../../lib/api';
+import { useT } from '../../../lib/i18n/context';
 
 interface Proxy {
   id: string;
@@ -16,6 +17,7 @@ interface Proxy {
 
 export default function ProxiesPage() {
   const qc = useQueryClient();
+  const t = useT();
   const { data, isLoading } = useQuery({
     queryKey: ['proxies'],
     queryFn: () => apiFetch<{ data: Proxy[] }>('/admin/v1/proxies'),
@@ -55,11 +57,8 @@ export default function ProxiesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Egress proxies</h1>
-        <p className="text-sm text-muted-foreground">
-          Residential / mobile proxies that individual accounts route through. Bind an account
-          to one on the Accounts page.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('proxies.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('proxies.subtitle')}</p>
       </div>
 
       <form
@@ -70,7 +69,7 @@ export default function ProxiesPage() {
         className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-3"
       >
         <label className="space-y-1 text-sm">
-          <span className="text-xs font-medium">Label</span>
+          <span className="text-xs font-medium">{t('proxies.form.label')}</span>
           <input
             value={form.label}
             onChange={(e) => setForm({ ...form, label: e.target.value })}
@@ -80,7 +79,7 @@ export default function ProxiesPage() {
           />
         </label>
         <label className="space-y-1 text-sm sm:col-span-2">
-          <span className="text-xs font-medium">URL</span>
+          <span className="text-xs font-medium">{t('proxies.form.url')}</span>
           <input
             value={form.url}
             onChange={(e) => setForm({ ...form, url: e.target.value })}
@@ -90,7 +89,7 @@ export default function ProxiesPage() {
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-xs font-medium">Region</span>
+          <span className="text-xs font-medium">{t('proxies.form.region')}</span>
           <input
             value={form.region}
             onChange={(e) => setForm({ ...form, region: e.target.value })}
@@ -104,7 +103,7 @@ export default function ProxiesPage() {
             disabled={create.isPending}
             className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
           >
-            {create.isPending ? 'adding…' : 'Add proxy'}
+            {create.isPending ? t('common.adding') : t('proxies.form.add')}
           </button>
         </div>
       </form>
@@ -113,10 +112,10 @@ export default function ProxiesPage() {
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-left text-muted-foreground">
             <tr>
-              <th className="px-4 py-2 font-medium">Label</th>
-              <th className="px-4 py-2 font-medium">URL</th>
-              <th className="px-4 py-2 font-medium">Region</th>
-              <th className="px-4 py-2 font-medium">Enabled</th>
+              <th className="px-4 py-2 font-medium">{t('proxies.col.label')}</th>
+              <th className="px-4 py-2 font-medium">{t('proxies.col.url')}</th>
+              <th className="px-4 py-2 font-medium">{t('proxies.col.region')}</th>
+              <th className="px-4 py-2 font-medium">{t('proxies.col.enabled')}</th>
               <th className="px-4 py-2"></th>
             </tr>
           </thead>
@@ -124,14 +123,14 @@ export default function ProxiesPage() {
             {isLoading && (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
-                  loading…
+                  {t('common.loading')}
                 </td>
               </tr>
             )}
             {!isLoading && (data?.data.length ?? 0) === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
-                  No proxies yet.
+                  {t('proxies.empty')}
                 </td>
               </tr>
             )}
@@ -141,7 +140,7 @@ export default function ProxiesPage() {
                 <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
                   {p.url.replace(/:[^@]+@/, ':***@')}
                 </td>
-                <td className="px-4 py-2">{p.region ?? '—'}</td>
+                <td className="px-4 py-2">{p.region ?? t('common.dash')}</td>
                 <td className="px-4 py-2">
                   <button
                     type="button"
@@ -150,18 +149,18 @@ export default function ProxiesPage() {
                       p.enabled ? 'bg-green-100 text-green-800' : 'bg-muted'
                     }`}
                   >
-                    {p.enabled ? 'on' : 'off'}
+                    {p.enabled ? t('common.on') : t('common.off')}
                   </button>
                 </td>
                 <td className="px-4 py-2 text-right">
                   <button
                     type="button"
                     onClick={() => {
-                      if (confirm(`Delete ${p.label}?`)) del.mutate(p.id);
+                      if (confirm(t('proxies.confirm.delete', { label: p.label }))) del.mutate(p.id);
                     }}
                     className="text-xs text-red-600 hover:underline"
                   >
-                    Delete
+                    {t('common.delete')}
                   </button>
                 </td>
               </tr>

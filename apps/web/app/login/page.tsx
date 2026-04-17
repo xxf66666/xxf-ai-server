@@ -4,11 +4,14 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/api';
 import { setBootstrapToken } from '../../lib/auth';
+import { useT } from '../../lib/i18n/context';
+import { LocaleSwitcher } from '../../lib/i18n/LocaleSwitcher';
 
 type Mode = 'password' | 'bootstrap';
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useT();
   const [mode, setMode] = useState<Mode>('password');
   const [form, setForm] = useState({ email: '', password: '', token: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -36,7 +39,7 @@ export default function LoginPage() {
       }
       router.replace('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'unknown error');
+      setError(err instanceof Error ? err.message : t('common.unknown'));
     } finally {
       setSubmitting(false);
     }
@@ -44,10 +47,13 @@ export default function LoginPage() {
 
   return (
     <main className="container flex min-h-screen items-center justify-center py-16">
+      <div className="absolute right-4 top-4">
+        <LocaleSwitcher />
+      </div>
       <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4 rounded-lg border border-border p-6 shadow-sm">
         <div>
-          <h1 className="text-xl font-semibold">Sign in</h1>
-          <p className="mt-1 text-xs text-muted-foreground">xxf-ai-server admin</p>
+          <h1 className="text-xl font-semibold">{t('login.title')}</h1>
+          <p className="mt-1 text-xs text-muted-foreground">{t('login.subtitle')}</p>
         </div>
 
         <div className="flex gap-1 rounded-md bg-muted p-1 text-xs">
@@ -56,21 +62,21 @@ export default function LoginPage() {
             onClick={() => setMode('password')}
             className={`flex-1 rounded py-1 ${mode === 'password' ? 'bg-background shadow-sm' : ''}`}
           >
-            Email + password
+            {t('login.tab.password')}
           </button>
           <button
             type="button"
             onClick={() => setMode('bootstrap')}
             className={`flex-1 rounded py-1 ${mode === 'bootstrap' ? 'bg-background shadow-sm' : ''}`}
           >
-            Bootstrap token
+            {t('login.tab.bootstrap')}
           </button>
         </div>
 
         {mode === 'password' ? (
           <>
             <label className="block space-y-1 text-sm">
-              <span className="text-xs font-medium">Email</span>
+              <span className="text-xs font-medium">{t('login.email')}</span>
               <input
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -81,7 +87,7 @@ export default function LoginPage() {
               />
             </label>
             <label className="block space-y-1 text-sm">
-              <span className="text-xs font-medium">Password</span>
+              <span className="text-xs font-medium">{t('login.password')}</span>
               <input
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -94,7 +100,7 @@ export default function LoginPage() {
           </>
         ) : (
           <label className="block space-y-1 text-sm">
-            <span className="text-xs font-medium">Bootstrap token</span>
+            <span className="text-xs font-medium">{t('login.token')}</span>
             <input
               value={form.token}
               onChange={(e) => setForm({ ...form, token: e.target.value })}
@@ -103,9 +109,7 @@ export default function LoginPage() {
               className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-xs"
               placeholder="ADMIN_BOOTSTRAP_TOKEN"
             />
-            <p className="text-xs text-muted-foreground">
-              Use only when no admin user exists yet — after bootstrap, prefer email/password.
-            </p>
+            <p className="text-xs text-muted-foreground">{t('login.token.hint')}</p>
           </label>
         )}
 
@@ -119,7 +123,7 @@ export default function LoginPage() {
           disabled={submitting}
           className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
         >
-          {submitting ? 'verifying…' : 'Sign in'}
+          {submitting ? t('login.verifying') : t('login.submit')}
         </button>
       </form>
     </main>
