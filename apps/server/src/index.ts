@@ -5,12 +5,15 @@ import sensible from '@fastify/sensible';
 
 import { env } from './config/env.js';
 import { logger } from './utils/logger.js';
+import { installOutboundProxy } from './utils/proxy.js';
 import { registerHealth } from './api/health.js';
 import { registerAnthropic } from './api/anthropic/messages.js';
 import { registerAdmin } from './api/admin/index.js';
 import { runMigrations } from './db/migrate.js';
 
 async function main() {
+  installOutboundProxy();
+
   if (process.env.SKIP_MIGRATIONS !== '1') {
     try {
       await runMigrations();

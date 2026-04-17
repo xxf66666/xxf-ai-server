@@ -1,6 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import type { Account } from '../../db/schema.js';
-import type { ApiKey } from '../../db/schema.js';
+import type { Account, ApiKey } from '../../db/schema.js';
 import { db } from '../../db/client.js';
 import { usageLog } from '../../db/schema.js';
 import { logger } from '../../utils/logger.js';
@@ -9,7 +8,10 @@ import {
   CLAUDE_MESSAGES_PATH,
   claudeAuthHeaders,
 } from '../oauth/claude.js';
-import { decryptAccessToken, incrementWindowUsage } from '../accounts/registry.js';
+import { ensureFreshAccessToken } from '../oauth/refresh.js';
+import { incrementWindowUsage } from '../accounts/registry.js';
+import { addWindowUsage } from '../accounts/quota.js';
+import { applyClassification, classifyUpstream } from '../accounts/health.js';
 import { createUsageAccumulator } from './stream.js';
 
 export interface RelayContext {
@@ -33,9 +35,16 @@ export async function relayMessages(
   const streaming = body.stream === true;
   const startedAt = Date.now();
 
-  const upstreamUrl = `${CLAUDE_UPSTREAM_BASE}${CLAUDE_MESSAGES_PATH}`;
-  const accessToken = decryptAccessToken(ctx.account);
+  const accessToken = await ensureFreshAccessToken(ctx.account);
+  if (!accessToken) {
+    await logUsage(ctx, model, 0, 0, Date.now() - startedAt, 503, 'needs_reauth');
+    return reply.code(503).send({
+      type: 'error',
+      error: { type: 'overloaded_error', message: 'account needs reauth; pool try again' },
+    });
+  }
 
+  const upstreamUrl = `${CLAUDE_UPSTREAM_BASE}${CLAUDE_MESSAGES_PATH}`;
   let upstream: Response;
   try {
     upstream = await fetch(upstreamUrl, {
@@ -52,16 +61,18 @@ export async function relayMessages(
     });
   }
 
-  // Non-2xx: forward status + body, translate to our error envelope when possible.
   if (!upstream.ok) {
     const text = await upstream.text();
     const latencyMs = Date.now() - startedAt;
-    await logUsage(ctx, model, 0, 0, latencyMs, upstream.status, 'upstream_error');
+    const classification = classifyUpstream(upstream.status, upstream.headers.get('retry-after'), text);
+    await Promise.all([
+      applyClassification(ctx.account, classification),
+      logUsage(ctx, model, 0, 0, latencyMs, upstream.status, classification.kind),
+    ]);
     reply.code(upstream.status).header('content-type', 'application/json');
     return reply.send(safeJson(text) ?? { type: 'error', error: { type: 'api_error', message: text } });
   }
 
-  // Streaming response: hijack the raw socket so Fastify doesn't buffer.
   if (streaming && upstream.body) {
     reply.hijack();
     const raw = reply.raw;
@@ -92,21 +103,23 @@ export async function relayMessages(
       await Promise.all([
         logUsage(ctx, model, usage.inputTokens, usage.outputTokens, latencyMs, 200, null),
         incrementWindowUsage(ctx.account.id, total).catch(() => {}),
+        addWindowUsage(ctx.account.id, total).catch(() => {}),
       ]);
     }
     return;
   }
 
-  // Non-streaming: read the whole body, parse usage, forward JSON.
   const text = await upstream.text();
   const parsed = safeJson(text);
   const usage = (parsed?.['usage'] ?? {}) as Record<string, unknown>;
   const input = typeof usage.input_tokens === 'number' ? usage.input_tokens : 0;
   const output = typeof usage.output_tokens === 'number' ? usage.output_tokens : 0;
+  const total = input + output;
   const latencyMs = Date.now() - startedAt;
   await Promise.all([
     logUsage(ctx, model, input, output, latencyMs, upstream.status, null),
-    incrementWindowUsage(ctx.account.id, input + output).catch(() => {}),
+    incrementWindowUsage(ctx.account.id, total).catch(() => {}),
+    addWindowUsage(ctx.account.id, total).catch(() => {}),
   ]);
   reply.code(upstream.status).header('content-type', 'application/json');
   return reply.send(parsed ?? text);
