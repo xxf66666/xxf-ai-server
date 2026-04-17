@@ -58,6 +58,9 @@ jobs:
       - name: Typecheck web
         run: pnpm --filter @xxf/web typecheck
 
+      - name: Unit tests (server)
+        run: pnpm --filter @xxf/server test
+
       - name: Build server
         run: pnpm --filter @xxf/server build
 
