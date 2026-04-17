@@ -125,8 +125,9 @@ describe('translateResponse', () => {
     };
     expect(out.object).toBe('chat.completion');
     expect(out.model).toBe('gpt-4o');
-    expect(out.choices[0].message.content).toBe('hello world');
-    expect(out.choices[0].finish_reason).toBe('stop');
+    const choice = out.choices[0]!;
+    expect(choice.message.content).toBe('hello world');
+    expect(choice.finish_reason).toBe('stop');
     expect(out.usage).toEqual({ prompt_tokens: 5, completion_tokens: 7, total_tokens: 12 });
   });
 
@@ -135,7 +136,7 @@ describe('translateResponse', () => {
       { id: 'msg_1', stop_reason: 'max_tokens' },
       'gpt-4o',
     ) as { choices: Array<{ finish_reason: string }> };
-    expect(out.choices[0].finish_reason).toBe('length');
+    expect(out.choices[0]!.finish_reason).toBe('length');
   });
 });
 
@@ -149,8 +150,9 @@ describe('translateStreamEvent', () => {
       ctx,
     );
     expect(chunks).toHaveLength(1);
-    expect(chunks[0]).toContain('"content":"hello"');
-    expect(chunks[0]!.startsWith('data:')).toBe(true);
+    const first = chunks[0]!;
+    expect(first).toContain('"content":"hello"');
+    expect(first.startsWith('data:')).toBe(true);
   });
 
   it('emits a finish_reason chunk on message_delta with stop_reason', () => {
@@ -160,7 +162,7 @@ describe('translateStreamEvent', () => {
       ctx,
     );
     expect(chunks).toHaveLength(1);
-    expect(chunks[0]).toContain('"finish_reason":"stop"');
+    expect(chunks[0]!).toContain('"finish_reason":"stop"');
   });
 
   it('emits [DONE] on message_stop', () => {
