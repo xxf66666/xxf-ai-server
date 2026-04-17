@@ -1,6 +1,8 @@
 import Fastify from 'fastify';
+import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
 
@@ -43,6 +45,11 @@ async function main() {
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(cors, { origin: true, credentials: true });
   await app.register(sensible);
+  await app.register(cookie);
+  await app.register(jwt, {
+    secret: env.JWT_SECRET,
+    cookie: { cookieName: 'xxf_admin_session', signed: false },
+  });
   await app.register(rateLimit, {
     global: false,
     redis,

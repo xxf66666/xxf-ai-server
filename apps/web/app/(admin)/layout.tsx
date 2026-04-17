@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { BarChart3, Boxes, KeyRound, LayoutDashboard, LogOut, Settings, Users } from 'lucide-react';
-import { clearAdminToken, getAdminToken } from '../../lib/auth';
+import { apiFetch } from '../../lib/api';
+import { clearBootstrapToken } from '../../lib/auth';
 
 const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -15,19 +16,29 @@ const nav = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ] as const;
 
+interface Me {
+  sub: string;
+  email: string;
+  role: 'admin' | 'contributor' | 'consumer';
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const [me, setMe] = useState<Me | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!getAdminToken()) {
-      router.replace('/login');
-      return;
-    }
-    setReady(true);
+    apiFetch<Me>('/admin/v1/auth/me')
+      .then((data) => {
+        setMe(data);
+        setReady(true);
+      })
+      .catch(() => {
+        router.replace('/login');
+      });
   }, [router]);
 
-  if (!ready) {
+  if (!ready || !me) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         loading…
@@ -35,8 +46,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  const onLogout = () => {
-    clearAdminToken();
+  const onLogout = async () => {
+    await apiFetch('/admin/v1/auth/logout', { method: 'POST' }).catch(() => {});
+    clearBootstrapToken();
     router.replace('/login');
   };
 
@@ -59,14 +71,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Link>
           ))}
         </nav>
-        <button
-          type="button"
-          onClick={onLogout}
-          className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted"
-        >
-          <LogOut className="h-4 w-4" />
-          <span>Sign out</span>
-        </button>
+        <div className="mt-4 space-y-2 border-t border-border pt-4">
+          <div className="px-2 text-xs">
+            <div className="truncate font-medium">{me.email}</div>
+            <div className="text-muted-foreground">{me.role}</div>
+          </div>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Sign out</span>
+          </button>
+        </div>
       </aside>
       <main className="flex-1 overflow-y-auto">
         <div className="container max-w-6xl py-8">{children}</div>

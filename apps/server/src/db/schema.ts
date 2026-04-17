@@ -107,6 +107,31 @@ export const usageLog = pgTable('usage_log', {
     .notNull(),
 });
 
+export const auditLog = pgTable('audit_log', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  actorUserId: uuid('actor_user_id').references(() => users.id, { onDelete: 'set null' }),
+  actorEmail: varchar('actor_email', { length: 320 }),
+  action: varchar('action', { length: 64 }).notNull(),
+  entityType: varchar('entity_type', { length: 64 }),
+  entityId: varchar('entity_id', { length: 64 }),
+  detail: jsonb('detail').$type<Record<string, unknown>>().default({}).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .default(sql`now()`)
+    .notNull(),
+});
+
+export const systemSettings = pgTable('system_settings', {
+  key: varchar('key', { length: 64 }).primaryKey(),
+  value: jsonb('value').$type<unknown>().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type NewSystemSetting = typeof systemSettings.$inferInsert;
+
+export type AuditLogEntry = typeof auditLog.$inferSelect;
+export type NewAuditLogEntry = typeof auditLog.$inferInsert;
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Account = typeof accounts.$inferSelect;

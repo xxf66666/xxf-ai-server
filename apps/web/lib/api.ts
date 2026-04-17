@@ -1,4 +1,4 @@
-import { getAdminToken } from './auth';
+import { getBootstrapToken } from './auth';
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ??
@@ -18,12 +18,18 @@ export async function apiFetch<T = unknown>(
   path: string,
   init: RequestInit & { token?: string | null } = {},
 ): Promise<T> {
-  const token = init.token ?? getAdminToken();
+  // Prefer JWT cookie (credentials: 'include'); also attach bootstrap token
+  // if one is stored, for first-run / emergency access.
+  const bootstrap = init.token ?? getBootstrapToken();
   const headers = new Headers(init.headers ?? {});
-  if (token) headers.set('X-Admin-Token', token);
+  if (bootstrap) headers.set('X-Admin-Token', bootstrap);
   if (init.body && !headers.has('content-type')) headers.set('content-type', 'application/json');
 
-  const res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...init,
+    headers,
+    credentials: 'include',
+  });
   const text = await res.text();
   const json = text ? safeJson(text) : null;
   if (!res.ok) {

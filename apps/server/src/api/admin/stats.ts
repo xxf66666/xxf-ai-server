@@ -80,4 +80,24 @@ export async function registerAdminStats(app: FastifyInstance): Promise<void> {
       })),
     };
   });
+
+  app.get('/admin/v1/stats/by-key', async () => {
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const rows = await db
+      .select({
+        apiKeyId: usageLog.apiKeyId,
+        tokens: sql<string>`coalesce(sum(${usageLog.inputTokens} + ${usageLog.outputTokens}), 0)`,
+        requests: count(),
+      })
+      .from(usageLog)
+      .where(and(gte(usageLog.createdAt, since24h)))
+      .groupBy(usageLog.apiKeyId);
+    return {
+      data: rows.map((r) => ({
+        apiKeyId: r.apiKeyId,
+        tokens: Number(r.tokens),
+        requests: Number(r.requests),
+      })),
+    };
+  });
 }
