@@ -111,6 +111,11 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
       }));
     }
 
+    const [meRow] = await db
+      .select({ balanceMud: users.balanceMud, spentMud: users.spentMud })
+      .from(users)
+      .where(eq(users.id, uid))
+      .limit(1);
     return {
       email: req.adminSession?.email ?? '',
       role: req.adminSession?.role ?? 'consumer',
@@ -118,6 +123,8 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
       tokens24h,
       requests24h,
       usedMonthly,
+      balanceMud: Number(meRow?.balanceMud ?? 0),
+      spentMud: Number(meRow?.spentMud ?? 0),
       timeseries,
     };
   });

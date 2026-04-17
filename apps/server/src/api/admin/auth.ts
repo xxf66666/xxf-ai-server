@@ -5,6 +5,9 @@ import { db } from '../../db/client.js';
 import { users } from '../../db/schema.js';
 import { hashPassword, verifyPassword } from '../../core/users/passwords.js';
 import { record } from '../../core/audit/log.js';
+import { consumeInvite } from '../../core/invites/index.js';
+import { seedWelcomeCredit } from '../../core/users/ledger.js';
+import { getSetting } from '../../core/settings/index.js';
 
 const LoginSchema = z.object({
   email: z.string().email(),
@@ -14,6 +17,7 @@ const LoginSchema = z.object({
 const RegisterSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8, 'password must be at least 8 chars'),
+  inviteCode: z.string().min(4, 'invite code required'),
 });
 
 const COOKIE_NAME = 'xxf_admin_session';
@@ -64,12 +68,19 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
         error: { type: 'invalid_request_error', message: parsed.error.message },
       });
     }
-    const { email, password } = parsed.data;
+    const { email, password, inviteCode } = parsed.data;
     const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
     if (existing.length > 0) {
       return reply.code(409).send({
         type: 'error',
         error: { type: 'invalid_request_error', message: 'email already registered' },
+      });
+    }
+    const invite = await consumeInvite(inviteCode.trim());
+    if (!invite) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'invalid or exhausted invite code' },
       });
     }
     const passwordHash = await hashPassword(password);
@@ -78,6 +89,10 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
       .values({ email, passwordHash, role: 'consumer' })
       .returning();
     if (!created) return reply.code(500).send({ error: 'insert_failed' });
+    // Seed the welcome credit; non-blocking — if settings are missing we
+    // still let them in with balance=0.
+    const welcome = Number(await getSetting('pricing.welcomeCreditMud')) || 0;
+    if (welcome > 0) await seedWelcomeCredit(created.id, welcome).catch(() => {});
     // Auto-login: set cookie so the freshly-registered user lands in /console.
     const token = await reply.jwtSign(
       { sub: created.id, email: created.email, role: created.role },

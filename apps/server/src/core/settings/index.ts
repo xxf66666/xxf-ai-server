@@ -8,6 +8,12 @@ export const SETTING_DEFAULTS = {
   'pool.utilizationTarget': 0.8,
   'pool.minRemainingTokens': 1000,
   'models.allow': [] as string[], // empty = allow all
+  // Pricing: multiplier applied to official price. 0.85 = 15% off.
+  'pricing.markupRate': 0.85,
+  // Welcome credit seeded at registration, in micro-USD. 5_000_000 = $5.00.
+  'pricing.welcomeCreditMud': 5_000_000,
+  // CNY per 1 USD for dual-currency display. Ops can tune weekly.
+  'pricing.usdToCnyRate': 7.2,
 } as const;
 
 export type SettingKey = keyof typeof SETTING_DEFAULTS;

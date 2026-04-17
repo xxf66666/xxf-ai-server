@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { BarChart3, Boxes, KeyRound, LayoutDashboard, LogOut, Network, Settings, Users } from 'lucide-react';
+import { BarChart3, Boxes, KeyRound, LayoutDashboard, LogOut, Network, Settings, Ticket, Users } from 'lucide-react';
 import { apiFetch } from '../../lib/api';
 import { clearBootstrapToken } from '../../lib/auth';
 import { useT } from '../../lib/i18n/context';
@@ -21,6 +21,7 @@ const nav: Array<{ href: string; label: DictKey; icon: typeof LayoutDashboard }>
   { href: '/accounts', label: 'nav.accounts', icon: Boxes },
   { href: '/users', label: 'nav.users', icon: Users },
   { href: '/keys', label: 'nav.keys', icon: KeyRound },
+  { href: '/invites', label: 'nav.invites', icon: Ticket },
   { href: '/proxies', label: 'nav.proxies', icon: Network },
   { href: '/stats', label: 'nav.stats', icon: BarChart3 },
   { href: '/settings', label: 'nav.settings', icon: Settings },

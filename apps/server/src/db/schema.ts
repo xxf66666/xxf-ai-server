@@ -29,6 +29,10 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 320 }).notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: userRoleEnum('role').notNull().default('consumer'),
+  // Balance & lifetime spend, stored in micro-USD (10^-6 USD).
+  // $5 welcome credit = 5_000_000 mud. New users get seeded at register time.
+  balanceMud: bigint('balance_mud', { mode: 'number' }).default(0).notNull(),
+  spentMud: bigint('spent_mud', { mode: 'number' }).default(0).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -102,6 +106,10 @@ export const usageLog = pgTable('usage_log', {
   latencyMs: integer('latency_ms').default(0).notNull(),
   status: integer('status').notNull(), // HTTP status
   errorCode: varchar('error_code', { length: 64 }),
+  // Cost charged to the api_key's user for this request, in micro-USD
+  // (10^-6 USD). Includes the operator's markup; 0 for errors that we
+  // choose not to bill for.
+  costMud: bigint('cost_mud', { mode: 'number' }).default(0).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true })
     .default(sql`now()`)
     .notNull(),
@@ -128,6 +136,37 @@ export const systemSettings = pgTable('system_settings', {
 
 export type SystemSetting = typeof systemSettings.$inferSelect;
 export type NewSystemSetting = typeof systemSettings.$inferInsert;
+
+// Per-model pricing. Stored in micro-USD per 1M tokens ("mud"):
+// $15/M → 15_000_000. Bigint avoids float drift when summing at the
+// per-request scale.
+export const modelPricing = pgTable('model_pricing', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  modelId: varchar('model_id', { length: 120 }).notNull().unique(),
+  provider: varchar('provider', { length: 16 }).notNull(),
+  inputMudPerM: bigint('input_mud_per_m', { mode: 'number' }).notNull(),
+  outputMudPerM: bigint('output_mud_per_m', { mode: 'number' }).notNull(),
+  tier: varchar('tier', { length: 32 }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+export type ModelPricing = typeof modelPricing.$inferSelect;
+export type NewModelPricing = typeof modelPricing.$inferInsert;
+
+// Invite codes: registration is gated. A valid, non-revoked, non-exhausted
+// code is required. Admin mints / resets / revokes via /admin/v1/invites.
+export const inviteCodes = pgTable('invite_codes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  code: varchar('code', { length: 32 }).notNull().unique(),
+  note: varchar('note', { length: 120 }),
+  createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  maxUses: integer('max_uses').default(1).notNull(),
+  useCount: integer('use_count').default(0).notNull(),
+  revoked: boolean('revoked').default(false).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+export type InviteCode = typeof inviteCodes.$inferSelect;
+export type NewInviteCode = typeof inviteCodes.$inferInsert;
 
 export type AuditLogEntry = typeof auditLog.$inferSelect;
 export type NewAuditLogEntry = typeof auditLog.$inferInsert;

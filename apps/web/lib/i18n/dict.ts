@@ -235,6 +235,67 @@ export const en = {
   'console.charts.model': 'Model',
   'console.charts.key': 'Key',
   'console.charts.status': 'Status',
+
+  // --- balance & pricing ---
+  'console.card.balance': 'Balance',
+  'console.card.spent': 'Lifetime spent',
+  'pricing.title': 'Pricing',
+  'pricing.subtitle':
+    'We take {markup}% of the official provider price. Prices shown per 1M tokens; input and output are billed separately.',
+  'pricing.col.model': 'Model',
+  'pricing.col.provider': 'Provider',
+  'pricing.col.tier': 'Tier',
+  'pricing.col.officialInput': 'Official input',
+  'pricing.col.officialOutput': 'Official output',
+  'pricing.col.ourInput': 'Our input',
+  'pricing.col.ourOutput': 'Our output',
+  'pricing.discount': 'Discount',
+  'pricing.welcomeCreditNote': 'Every new account gets a ${amount} welcome credit.',
+
+  // --- docs ---
+  'docs.title': 'Integration docs',
+  'docs.subtitle': 'How to point AI coding tools at xxf-ai-server.',
+  'docs.claudeCode.h': 'Claude Code',
+  'docs.cline.h': 'Cline (VSCode)',
+  'docs.cursor.h': 'Cursor',
+  'docs.generic.h': 'Any OpenAI-compatible client',
+  'docs.register': 'Register an account, mint an API key from Console → API Keys.',
+  'docs.envvars': 'Set these environment variables:',
+  'docs.settingsFile': 'Or edit {file}:',
+  'docs.verify': 'Verify:',
+
+  // --- register invite ---
+  'register.inviteCode': 'Invite code',
+  'register.inviteCode.hint': 'Required. Ask an admin for a code.',
+
+  // --- invites admin ---
+  'nav.invites': 'Invites',
+  'invites.title': 'Invite codes',
+  'invites.subtitle': 'Registration is gated — only someone with a valid code can sign up.',
+  'invites.form.note': 'Note',
+  'invites.form.note.placeholder': 'e.g. for Alice',
+  'invites.form.maxUses': 'Max uses',
+  'invites.form.create': 'Mint invite',
+  'invites.col.code': 'Code',
+  'invites.col.note': 'Note',
+  'invites.col.uses': 'Uses',
+  'invites.col.status': 'Status',
+  'invites.col.created': 'Created',
+  'invites.status.active': 'active',
+  'invites.status.revoked': 'revoked',
+  'invites.status.exhausted': 'exhausted',
+  'invites.action.reset': 'Reset',
+  'invites.action.revoke': 'Revoke',
+  'invites.action.delete': 'Delete',
+  'invites.confirm.reset': 'Regenerate {code}? The old code will stop working.',
+  'invites.confirm.revoke': 'Revoke {code}?',
+  'invites.confirm.delete': 'Delete invite {code}?',
+  'invites.empty': 'No invites yet.',
+  'invites.copied': 'copied',
+
+  // public nav
+  'nav.pricing': 'Pricing',
+  'nav.docs': 'Docs',
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -471,4 +532,64 @@ export const zh: Dict = {
   'console.charts.model': '模型',
   'console.charts.key': '密钥',
   'console.charts.status': '状态',
+
+  // --- balance & pricing ---
+  'console.card.balance': '余额',
+  'console.card.spent': '累计消费',
+  'pricing.title': '价格',
+  'pricing.subtitle': '按供应商官方价的 {markup}% 收取（更便宜）。价格按每 100 万 token 显示，输入输出分别计费。',
+  'pricing.col.model': '模型',
+  'pricing.col.provider': '供应商',
+  'pricing.col.tier': '档次',
+  'pricing.col.officialInput': '官方输入价',
+  'pricing.col.officialOutput': '官方输出价',
+  'pricing.col.ourInput': '本站输入价',
+  'pricing.col.ourOutput': '本站输出价',
+  'pricing.discount': '折扣',
+  'pricing.welcomeCreditNote': '新注册用户免费赠送 ${amount} 体验额度。',
+
+  // --- docs ---
+  'docs.title': '接入文档',
+  'docs.subtitle': '把 AI 编码工具指到 xxf-ai-server 的步骤。',
+  'docs.claudeCode.h': 'Claude Code',
+  'docs.cline.h': 'Cline（VSCode）',
+  'docs.cursor.h': 'Cursor',
+  'docs.generic.h': '任何 OpenAI 兼容客户端',
+  'docs.register': '先注册账号，在 控制台 → API 密钥 里铸一把 key。',
+  'docs.envvars': '设置以下环境变量：',
+  'docs.settingsFile': '或者编辑 {file}：',
+  'docs.verify': '验证：',
+
+  // --- register invite ---
+  'register.inviteCode': '邀请码',
+  'register.inviteCode.hint': '必填。向管理员索要一个邀请码。',
+
+  // --- invites admin ---
+  'nav.invites': '邀请码',
+  'invites.title': '邀请码',
+  'invites.subtitle': '注册受邀请码限制 —— 没码的访客无法自助注册。',
+  'invites.form.note': '备注',
+  'invites.form.note.placeholder': '例如：给 Alice',
+  'invites.form.maxUses': '最多使用次数',
+  'invites.form.create': '铸造邀请码',
+  'invites.col.code': '邀请码',
+  'invites.col.note': '备注',
+  'invites.col.uses': '已用/上限',
+  'invites.col.status': '状态',
+  'invites.col.created': '创建时间',
+  'invites.status.active': '可用',
+  'invites.status.revoked': '已撤销',
+  'invites.status.exhausted': '已耗尽',
+  'invites.action.reset': '重置',
+  'invites.action.revoke': '撤销',
+  'invites.action.delete': '删除',
+  'invites.confirm.reset': '重置 {code}？旧邀请码会失效。',
+  'invites.confirm.revoke': '撤销 {code}？',
+  'invites.confirm.delete': '删除 {code}？',
+  'invites.empty': '还没有邀请码。',
+  'invites.copied': '已复制',
+
+  // public nav
+  'nav.pricing': '定价',
+  'nav.docs': '文档',
 };

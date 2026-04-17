@@ -13,6 +13,8 @@ import { incrementWindowUsage } from '../accounts/registry.js';
 import { addWindowUsage } from '../accounts/quota.js';
 import { applyClassification, classifyUpstream } from '../accounts/health.js';
 import { recordKeyUsage } from '../users/quota.js';
+import { debitForRequest } from '../users/ledger.js';
+import { computeCost } from '../pricing/index.js';
 import { createUsageAccumulator } from './stream.js';
 import { isOpen, recordRequest } from './breaker.js';
 import { getDispatcher } from '../proxies/index.js';
@@ -120,11 +122,13 @@ export async function relayMessages(
       raw.end();
       const latencyMs = Date.now() - startedAt;
       const total = usage.inputTokens + usage.outputTokens;
+      const costMud = await computeCost(model, usage.inputTokens, usage.outputTokens).catch(() => 0);
       await Promise.all([
-        logUsage(ctx, model, usage.inputTokens, usage.outputTokens, latencyMs, 200, null),
+        logUsage(ctx, model, usage.inputTokens, usage.outputTokens, latencyMs, 200, null, costMud),
         incrementWindowUsage(ctx.account.id, total).catch(() => {}),
         addWindowUsage(ctx.account.id, total).catch(() => {}),
         recordKeyUsage(ctx.apiKey.id, total).catch(() => {}),
+        debitForRequest(ctx.apiKey.id, costMud).catch(() => {}),
         recordRequest('claude', false),
       ]);
       relayRequests.inc({ provider: 'claude', route: 'messages', outcome: 'ok' });
@@ -142,11 +146,13 @@ export async function relayMessages(
   const output = typeof usage.output_tokens === 'number' ? usage.output_tokens : 0;
   const total = input + output;
   const latencyMs = Date.now() - startedAt;
+  const costMud = await computeCost(model, input, output).catch(() => 0);
   await Promise.all([
-    logUsage(ctx, model, input, output, latencyMs, upstream.status, null),
+    logUsage(ctx, model, input, output, latencyMs, upstream.status, null, costMud),
     incrementWindowUsage(ctx.account.id, total).catch(() => {}),
     addWindowUsage(ctx.account.id, total).catch(() => {}),
     recordKeyUsage(ctx.apiKey.id, total).catch(() => {}),
+    debitForRequest(ctx.apiKey.id, costMud).catch(() => {}),
     recordRequest('claude', false),
   ]);
   relayRequests.inc({ provider: 'claude', route: 'messages', outcome: 'ok' });
@@ -173,6 +179,7 @@ async function logUsage(
   latencyMs: number,
   status: number,
   errorCode: string | null,
+  costMud: number = 0,
 ): Promise<void> {
   try {
     await db.insert(usageLog).values({
@@ -185,6 +192,7 @@ async function logUsage(
       latencyMs,
       status,
       errorCode,
+      costMud,
     });
   } catch (err) {
     logger.warn({ err }, 'failed to persist usage_log entry');

@@ -10,7 +10,7 @@ import { LocaleSwitcher } from '../../lib/i18n/LocaleSwitcher';
 export default function RegisterPage() {
   const router = useRouter();
   const t = useT();
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ email: '', password: '', inviteCode: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,6 +70,19 @@ export default function RegisterPage() {
             required
             className="w-full rounded-md border border-border bg-background px-3 py-2"
           />
+        </label>
+        <label className="block space-y-1 text-sm">
+          <span className="text-xs font-medium">{t('register.inviteCode')}</span>
+          <input
+            value={form.inviteCode}
+            onChange={(e) => setForm({ ...form, inviteCode: e.target.value.trim() })}
+            type="text"
+            required
+            minLength={4}
+            className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-xs"
+            placeholder="XXFAI-XXXXXXXX"
+          />
+          <p className="text-xs text-muted-foreground">{t('register.inviteCode.hint')}</p>
         </label>
 
         {error && (

@@ -10,6 +10,8 @@ import { addWindowUsage } from '../../core/accounts/quota.js';
 import { applyClassification, classifyUpstream } from '../../core/accounts/health.js';
 import { isOpen, recordRequest } from '../../core/relay/breaker.js';
 import { getDispatcher } from '../../core/proxies/index.js';
+import { computeCost } from '../../core/pricing/index.js';
+import { debitForRequest } from '../../core/users/ledger.js';
 import {
   CLAUDE_MESSAGES_PATH,
   CLAUDE_UPSTREAM_BASE,
@@ -167,11 +169,13 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
           raw.end();
           const total = inputTokens + outputTokens;
           const latencyMs = Date.now() - startedAt;
+          const costMud = await computeCost(anthropicBody.model, inputTokens, outputTokens).catch(() => 0);
           await Promise.all([
-            logEntry(apiKey.id, account.id, requestedModel, inputTokens, outputTokens, latencyMs, 200, null),
+            logEntry(apiKey.id, account.id, requestedModel, inputTokens, outputTokens, latencyMs, 200, null, costMud),
             incrementWindowUsage(account.id, total).catch(() => {}),
             addWindowUsage(account.id, total).catch(() => {}),
             recordKeyUsage(apiKey.id, total).catch(() => {}),
+            debitForRequest(apiKey.id, costMud).catch(() => {}),
             recordRequest('claude', false),
           ]);
         }
@@ -195,11 +199,13 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
       const output = typeof usage.output_tokens === 'number' ? usage.output_tokens : 0;
       const total = input + output;
       const latencyMs = Date.now() - startedAt;
+      const costMud = await computeCost(anthropicBody.model, input, output).catch(() => 0);
       await Promise.all([
-        logEntry(apiKey.id, account.id, requestedModel, input, output, latencyMs, 200, null),
+        logEntry(apiKey.id, account.id, requestedModel, input, output, latencyMs, 200, null, costMud),
         incrementWindowUsage(account.id, total).catch(() => {}),
         addWindowUsage(account.id, total).catch(() => {}),
         recordKeyUsage(apiKey.id, total).catch(() => {}),
+        debitForRequest(apiKey.id, costMud).catch(() => {}),
         recordRequest('claude', false),
       ]);
       return reply.code(200).send(out);
@@ -216,6 +222,7 @@ async function logEntry(
   latencyMs: number,
   status: number,
   errorCode: string | null,
+  costMud: number = 0,
 ): Promise<void> {
   try {
     await db.insert(usageLog).values({
@@ -228,6 +235,7 @@ async function logEntry(
       latencyMs,
       status,
       errorCode,
+      costMud,
     });
   } catch (err) {
     logger.warn({ err }, 'openai relay: failed to persist usage_log entry');

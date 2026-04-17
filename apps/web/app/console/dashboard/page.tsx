@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Activity, KeyRound, Send, Zap } from 'lucide-react';
+import { Activity, CircleDollarSign, KeyRound, Send, TrendingDown, Wallet, Zap } from 'lucide-react';
 import { apiFetch } from '../../../lib/api';
 import { useT } from '../../../lib/i18n/context';
 import type { DictKey } from '../../../lib/i18n/dict';
@@ -14,10 +14,14 @@ interface Overview {
   tokens24h: number;
   requests24h: number;
   usedMonthly: number;
+  balanceMud: number;
+  spentMud: number;
   timeseries: Array<{ ts: string; tokens: number; requests: number }>;
 }
 
 const fmt = new Intl.NumberFormat();
+const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const mudToUsd = (mud: number) => mud / 1_000_000;
 
 function greetingKey(): DictKey {
   const h = new Date().getHours();
@@ -41,6 +45,18 @@ export default function ConsoleDashboardPage() {
   });
 
   const cards = [
+    {
+      label: t('console.card.balance'),
+      value: overview ? usd.format(mudToUsd(overview.balanceMud)) : t('common.dash'),
+      icon: Wallet,
+      tint: 'bg-teal-500/10 text-teal-600',
+    },
+    {
+      label: t('console.card.spent'),
+      value: overview ? usd.format(mudToUsd(overview.spentMud)) : t('common.dash'),
+      icon: CircleDollarSign,
+      tint: 'bg-violet-500/10 text-violet-600',
+    },
     {
       label: t('console.card.activeKeys'),
       value: overview ? String(overview.activeKeys) : t('common.dash'),
@@ -67,6 +83,9 @@ export default function ConsoleDashboardPage() {
     },
   ];
 
+  // Suppress unused-import warning in case icon tree-shakes
+  void TrendingDown;
+
   return (
     <div className="space-y-6">
       <div>
@@ -76,7 +95,7 @@ export default function ConsoleDashboardPage() {
         </h1>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {cards.map((c) => {
           const Icon = c.icon;
           return (
