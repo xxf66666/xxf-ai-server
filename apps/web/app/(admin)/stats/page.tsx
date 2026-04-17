@@ -6,10 +6,13 @@ import { useT } from '../../../lib/i18n/context';
 
 interface Account { id: string; label: string | null; plan: string; status: string }
 interface User { id: string; email: string }
-interface ByAccount { accountId: string | null; tokens: number; requests: number }
-interface ByKey { apiKeyId: string | null; tokens: number; requests: number }
+interface ByAccount { accountId: string | null; tokens: number; requests: number; costMud: number }
+interface ByKey { apiKeyId: string | null; tokens: number; requests: number; costMud: number }
+interface ByUser { userId: string; email: string; role: string; tokens: number; requests: number; costMud: number }
 
 const fmt = new Intl.NumberFormat();
+const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const mudToUsd = (mud: number) => mud / 1_000_000;
 
 export default function StatsPage() {
   const t = useT();
@@ -31,11 +34,17 @@ export default function StatsPage() {
     queryFn: () => apiFetch<{ data: ByKey[] }>('/admin/v1/stats/by-key'),
     refetchInterval: 15_000,
   });
+  const { data: byUser } = useQuery({
+    queryKey: ['stats', 'by-user'],
+    queryFn: () => apiFetch<{ data: ByUser[] }>('/admin/v1/stats/by-user'),
+    refetchInterval: 15_000,
+  });
 
   const accountIndex = new Map((accounts?.data ?? []).map((a) => [a.id, a]));
 
-  const sortedAccounts = [...(byAccount?.data ?? [])].sort((a, b) => b.tokens - a.tokens);
-  const sortedKeys = [...(byKey?.data ?? [])].sort((a, b) => b.tokens - a.tokens);
+  const sortedAccounts = [...(byAccount?.data ?? [])].sort((a, b) => b.costMud - a.costMud);
+  const sortedKeys = [...(byKey?.data ?? [])].sort((a, b) => b.costMud - a.costMud);
+  const sortedUsers = [...(byUser?.data ?? [])].sort((a, b) => b.costMud - a.costMud);
 
   return (
     <div className="space-y-8">
@@ -43,6 +52,41 @@ export default function StatsPage() {
         <h1 className="text-2xl font-semibold tracking-tight">{t('stats.title')}</h1>
         <p className="text-sm text-muted-foreground">{t('stats.subtitle')}</p>
       </div>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-medium">{t('stats.byUser')}</h2>
+        <div className="rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-left text-muted-foreground">
+              <tr>
+                <th className="px-4 py-2 font-medium">{t('stats.col.user')}</th>
+                <th className="px-4 py-2 font-medium">{t('stats.col.role')}</th>
+                <th className="px-4 py-2 text-right font-medium">{t('stats.col.tokens')}</th>
+                <th className="px-4 py-2 text-right font-medium">{t('stats.col.requests')}</th>
+                <th className="px-4 py-2 text-right font-medium">{t('stats.col.cost')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedUsers.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                    {t('stats.empty')}
+                  </td>
+                </tr>
+              )}
+              {sortedUsers.map((row) => (
+                <tr key={row.userId} className="border-t border-border">
+                  <td className="px-4 py-2 font-mono text-xs">{row.email}</td>
+                  <td className="px-4 py-2">{row.role}</td>
+                  <td className="px-4 py-2 text-right">{fmt.format(row.tokens)}</td>
+                  <td className="px-4 py-2 text-right">{fmt.format(row.requests)}</td>
+                  <td className="px-4 py-2 text-right font-mono text-xs">{usd.format(mudToUsd(row.costMud))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <section className="space-y-3">
         <h2 className="text-sm font-medium">{t('stats.byAccount')}</h2>
@@ -55,12 +99,13 @@ export default function StatsPage() {
                 <th className="px-4 py-2 font-medium">{t('stats.col.status')}</th>
                 <th className="px-4 py-2 text-right font-medium">{t('stats.col.tokens')}</th>
                 <th className="px-4 py-2 text-right font-medium">{t('stats.col.requests')}</th>
+                <th className="px-4 py-2 text-right font-medium">{t('stats.col.cost')}</th>
               </tr>
             </thead>
             <tbody>
               {sortedAccounts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
                     {t('stats.empty')}
                   </td>
                 </tr>
@@ -76,6 +121,7 @@ export default function StatsPage() {
                     <td className="px-4 py-2">{acct?.status ?? t('common.dash')}</td>
                     <td className="px-4 py-2 text-right">{fmt.format(row.tokens)}</td>
                     <td className="px-4 py-2 text-right">{fmt.format(row.requests)}</td>
+                    <td className="px-4 py-2 text-right font-mono text-xs">{usd.format(mudToUsd(row.costMud))}</td>
                   </tr>
                 );
               })}
@@ -93,12 +139,13 @@ export default function StatsPage() {
                 <th className="px-4 py-2 font-medium">{t('stats.col.keyId')}</th>
                 <th className="px-4 py-2 text-right font-medium">{t('stats.col.tokens')}</th>
                 <th className="px-4 py-2 text-right font-medium">{t('stats.col.requests')}</th>
+                <th className="px-4 py-2 text-right font-medium">{t('stats.col.cost')}</th>
               </tr>
             </thead>
             <tbody>
               {sortedKeys.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="px-4 py-6 text-center text-muted-foreground">
+                  <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
                     {t('stats.empty')}
                   </td>
                 </tr>
@@ -110,6 +157,7 @@ export default function StatsPage() {
                   </td>
                   <td className="px-4 py-2 text-right">{fmt.format(row.tokens)}</td>
                   <td className="px-4 py-2 text-right">{fmt.format(row.requests)}</td>
+                  <td className="px-4 py-2 text-right font-mono text-xs">{usd.format(mudToUsd(row.costMud))}</td>
                 </tr>
               ))}
             </tbody>

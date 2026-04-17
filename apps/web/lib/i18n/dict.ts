@@ -296,6 +296,27 @@ export const en = {
   // public nav
   'nav.pricing': 'Pricing',
   'nav.docs': 'Docs',
+
+  // --- user balance admin ---
+  'users.col.balance': 'Balance',
+  'users.col.spent': 'Spent',
+  'users.action.topup': 'Top up',
+  'users.topup.title': 'Top up {email}',
+  'users.topup.amount': 'Amount in USD',
+  'users.topup.amount.hint': 'Positive adds credit, negative deducts. E.g. 10 = +$10; -5 = -$5.',
+  'users.topup.reason': 'Reason (optional)',
+  'users.topup.submit': 'Adjust',
+  'users.topup.submitting': 'adjusting…',
+
+  // --- stats cost ---
+  'dashboard.card.cost24h': 'Cost (24h)',
+  'stats.col.cost': 'Cost',
+  'stats.byUser': 'By user',
+  'stats.col.user': 'User',
+  'stats.col.role': 'Role',
+
+  // --- console usage cost ---
+  'console.usage.col.cost': 'Cost',
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -592,4 +613,25 @@ export const zh: Dict = {
   // public nav
   'nav.pricing': '定价',
   'nav.docs': '文档',
+
+  // --- user balance admin ---
+  'users.col.balance': '余额',
+  'users.col.spent': '已消费',
+  'users.action.topup': '调整余额',
+  'users.topup.title': '给 {email} 充值 / 扣款',
+  'users.topup.amount': '金额（USD）',
+  'users.topup.amount.hint': '正数充值，负数扣款。例如 10 = +$10；-5 = -$5。',
+  'users.topup.reason': '备注（可选）',
+  'users.topup.submit': '调整',
+  'users.topup.submitting': '处理中…',
+
+  // --- stats cost ---
+  'dashboard.card.cost24h': '成本（24h）',
+  'stats.col.cost': '成本',
+  'stats.byUser': '按用户',
+  'stats.col.user': '用户',
+  'stats.col.role': '角色',
+
+  // --- console usage cost ---
+  'console.usage.col.cost': '花费',
 };

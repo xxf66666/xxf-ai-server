@@ -204,6 +204,7 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
         latencyMs: usageLog.latencyMs,
         status: usageLog.status,
         errorCode: usageLog.errorCode,
+        costMud: usageLog.costMud,
         keyName: apiKeys.name,
       })
       .from(usageLog)
@@ -222,6 +223,7 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
         latencyMs: r.latencyMs,
         status: r.status,
         errorCode: r.errorCode,
+        costMud: Number(r.costMud ?? 0),
         keyName: r.keyName,
       })),
     };

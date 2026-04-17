@@ -14,10 +14,18 @@ interface UsageRow {
   latencyMs: number;
   status: number;
   errorCode: string | null;
+  costMud: number;
   keyName: string;
 }
 
 const fmt = new Intl.NumberFormat();
+const usd = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 4,
+  maximumFractionDigits: 6,
+});
+const mudToUsd = (mud: number) => mud / 1_000_000;
 
 function statusClass(s: number): string {
   if (s >= 200 && s < 300) return 'bg-green-100 text-green-800';
@@ -50,6 +58,7 @@ export default function ConsoleUsagePage() {
               <th className="px-4 py-2 font-medium">{t('console.usage.col.model')}</th>
               <th className="px-4 py-2 font-medium text-right">{t('console.usage.col.input')}</th>
               <th className="px-4 py-2 font-medium text-right">{t('console.usage.col.output')}</th>
+              <th className="px-4 py-2 font-medium text-right">{t('console.usage.col.cost')}</th>
               <th className="px-4 py-2 font-medium text-right">{t('console.usage.col.latency')}</th>
               <th className="px-4 py-2 font-medium">{t('console.usage.col.status')}</th>
             </tr>
@@ -57,14 +66,14 @@ export default function ConsoleUsagePage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">
+                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">
                   {t('common.loading')}
                 </td>
               </tr>
             )}
             {!isLoading && (data?.data.length ?? 0) === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">
+                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">
                   {t('console.usage.empty')}
                 </td>
               </tr>
@@ -78,6 +87,9 @@ export default function ConsoleUsagePage() {
                 <td className="px-4 py-2 font-mono text-xs">{r.model}</td>
                 <td className="px-4 py-2 text-right">{fmt.format(r.inputTokens)}</td>
                 <td className="px-4 py-2 text-right">{fmt.format(r.outputTokens)}</td>
+                <td className="px-4 py-2 text-right font-mono text-xs">
+                  {r.costMud > 0 ? usd.format(mudToUsd(r.costMud)) : t('common.dash')}
+                </td>
                 <td className="px-4 py-2 text-right">{r.latencyMs}ms</td>
                 <td className="px-4 py-2">
                   <span className={`rounded-full px-2 py-0.5 text-xs ${statusClass(r.status)}`}>

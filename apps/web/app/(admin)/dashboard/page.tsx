@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Activity, Boxes, Send, Zap } from 'lucide-react';
+import { Activity, Boxes, CircleDollarSign, Send, Zap } from 'lucide-react';
 import {
   Area,
   AreaChart,
@@ -22,17 +22,21 @@ interface Overview {
   activeAccounts: number;
   tokensLast24h: number;
   requestsLast24h: number;
+  costLast24hMud: number;
   poolUtilization: number;
-  timeseries: Array<{ ts: string; tokens: number; requests: number }>;
+  timeseries: Array<{ ts: string; tokens: number; requests: number; costMud: number }>;
 }
 
 interface ByAccount {
   accountId: string | null;
   tokens: number;
   requests: number;
+  costMud: number;
 }
 
 const fmt = new Intl.NumberFormat();
+const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const mudToUsd = (mud: number) => mud / 1_000_000;
 const hour = new Intl.DateTimeFormat(undefined, {
   month: '2-digit',
   day: '2-digit',
@@ -74,6 +78,12 @@ export default function DashboardPage() {
       tint: 'bg-emerald-500/10 text-emerald-600',
     },
     {
+      label: t('dashboard.card.cost24h'),
+      value: data ? usd.format(mudToUsd(data.costLast24hMud)) : t('common.dash'),
+      icon: CircleDollarSign,
+      tint: 'bg-violet-500/10 text-violet-600',
+    },
+    {
       label: t('dashboard.card.poolUtilization'),
       value: data ? `${Math.round(data.poolUtilization * 100)}%` : t('common.dash'),
       icon: Activity,
@@ -107,7 +117,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map((c) => {
           const Icon = c.icon;
           return (
