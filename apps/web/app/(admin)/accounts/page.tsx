@@ -51,6 +51,19 @@ export default function AccountsPage() {
     mutationFn: (id: string) => apiFetch(`/admin/v1/accounts/${id}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
   });
+  const probe = useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<{ ok: boolean; status: number; classification: string; latencyMs: number }>(
+        `/admin/v1/accounts/${id}/probe`,
+        { method: 'POST' },
+      ),
+    onSuccess: (res, id) => {
+      qc.invalidateQueries({ queryKey: ['accounts'] });
+      alert(
+        `probe ${id.slice(0, 8)}…\nHTTP ${res.status} → ${res.classification}\n${res.latencyMs}ms`,
+      );
+    },
+  });
 
   return (
     <div className="space-y-6">
@@ -112,7 +125,15 @@ export default function AccountsPage() {
                   </span>
                 </td>
                 <td className="px-4 py-2 text-right">{fmt.format(a.windowTokensUsed)}</td>
-                <td className="px-4 py-2 text-right">
+                <td className="space-x-3 px-4 py-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => probe.mutate(a.id)}
+                    disabled={probe.isPending}
+                    className="text-xs text-primary hover:underline disabled:opacity-60"
+                  >
+                    Probe
+                  </button>
                   <button
                     type="button"
                     onClick={() => {

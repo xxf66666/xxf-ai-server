@@ -12,7 +12,9 @@ import { ensureFreshAccessToken } from '../oauth/refresh.js';
 import { incrementWindowUsage } from '../accounts/registry.js';
 import { addWindowUsage } from '../accounts/quota.js';
 import { applyClassification, classifyUpstream } from '../accounts/health.js';
+import { recordKeyUsage } from '../users/quota.js';
 import { createUsageAccumulator } from './stream.js';
+import { isOpen, recordRequest } from './breaker.js';
 
 export interface RelayContext {
   account: Account;
@@ -35,6 +37,14 @@ export async function relayMessages(
   const streaming = body.stream === true;
   const startedAt = Date.now();
 
+  if (await isOpen('claude')) {
+    await logUsage(ctx, model, 0, 0, 0, 503, 'circuit_open');
+    return reply.code(503).send({
+      type: 'error',
+      error: { type: 'overloaded_error', message: 'upstream circuit open; try again shortly' },
+    });
+  }
+
   const accessToken = await ensureFreshAccessToken(ctx.account);
   if (!accessToken) {
     await logUsage(ctx, model, 0, 0, Date.now() - startedAt, 503, 'needs_reauth');
@@ -54,7 +64,10 @@ export async function relayMessages(
     });
   } catch (err) {
     logger.error({ err, accountId: ctx.account.id }, 'upstream fetch failed');
-    await logUsage(ctx, model, 0, 0, Date.now() - startedAt, 502, 'upstream_unreachable');
+    await Promise.all([
+      logUsage(ctx, model, 0, 0, Date.now() - startedAt, 502, 'upstream_unreachable'),
+      recordRequest('claude', true),
+    ]);
     return reply.code(502).send({
       type: 'error',
       error: { type: 'api_error', message: 'upstream unreachable' },
@@ -68,6 +81,7 @@ export async function relayMessages(
     await Promise.all([
       applyClassification(ctx.account, classification),
       logUsage(ctx, model, 0, 0, latencyMs, upstream.status, classification.kind),
+      recordRequest('claude', true),
     ]);
     reply.code(upstream.status).header('content-type', 'application/json');
     return reply.send(safeJson(text) ?? { type: 'error', error: { type: 'api_error', message: text } });
@@ -104,6 +118,8 @@ export async function relayMessages(
         logUsage(ctx, model, usage.inputTokens, usage.outputTokens, latencyMs, 200, null),
         incrementWindowUsage(ctx.account.id, total).catch(() => {}),
         addWindowUsage(ctx.account.id, total).catch(() => {}),
+        recordKeyUsage(ctx.apiKey.id, total).catch(() => {}),
+        recordRequest('claude', false),
       ]);
     }
     return;
@@ -120,6 +136,8 @@ export async function relayMessages(
     logUsage(ctx, model, input, output, latencyMs, upstream.status, null),
     incrementWindowUsage(ctx.account.id, total).catch(() => {}),
     addWindowUsage(ctx.account.id, total).catch(() => {}),
+    recordKeyUsage(ctx.apiKey.id, total).catch(() => {}),
+    recordRequest('claude', false),
   ]);
   reply.code(upstream.status).header('content-type', 'application/json');
   return reply.send(parsed ?? text);

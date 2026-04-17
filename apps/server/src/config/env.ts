@@ -30,6 +30,10 @@ const schema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 chars'),
   ADMIN_BOOTSTRAP_TOKEN: z.string().min(16).optional(),
 
+  // Rate limit on /v1/* per API key.
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
+
   CLAUDE_OAUTH_CLIENT_ID: z.string().optional(),
   CHATGPT_OAUTH_CLIENT_ID: z.string().optional(),
 

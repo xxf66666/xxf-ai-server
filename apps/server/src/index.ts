@@ -1,15 +1,18 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
 
 import { env } from './config/env.js';
 import { logger } from './utils/logger.js';
 import { installOutboundProxy } from './utils/proxy.js';
+import { redis } from './cache/redis.js';
 import { registerHealth } from './api/health.js';
 import { registerAnthropic } from './api/anthropic/messages.js';
 import { registerAdmin } from './api/admin/index.js';
 import { runMigrations } from './db/migrate.js';
+import { startWorkers } from './workers/index.js';
 
 async function main() {
   installOutboundProxy();
@@ -40,6 +43,19 @@ async function main() {
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(cors, { origin: true, credentials: true });
   await app.register(sensible);
+  await app.register(rateLimit, {
+    global: false,
+    redis,
+    nameSpace: 'xxf-rl:',
+    errorResponseBuilder: (_req, context) => ({
+      statusCode: 429,
+      type: 'error',
+      error: {
+        type: 'rate_limit_error',
+        message: `rate limited — retry in ${context.after}`,
+      },
+    }),
+  });
 
   await registerHealth(app);
   await registerAdmin(app);
@@ -48,6 +64,7 @@ async function main() {
   try {
     await app.listen({ host: env.SERVER_HOST, port: env.SERVER_PORT });
     logger.info({ port: env.SERVER_PORT }, 'xxf-ai-server listening');
+    startWorkers();
   } catch (err) {
     logger.fatal({ err }, 'failed to start');
     process.exit(1);

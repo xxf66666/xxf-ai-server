@@ -13,6 +13,7 @@ import {
   listAccounts,
   setAccountStatus,
 } from '../../core/accounts/registry.js';
+import { probeAccount } from '../../core/accounts/probe.js';
 import type { Account } from '../../db/schema.js';
 
 const AttachSchema = z.object({
@@ -85,5 +86,13 @@ export async function registerAdminAccounts(app: FastifyInstance): Promise<void>
     const id = (req.params as { id: string }).id;
     await deleteAccount(id);
     return reply.code(204).send();
+  });
+
+  app.post('/admin/v1/accounts/:id/probe', async (req, reply) => {
+    const id = (req.params as { id: string }).id;
+    const account = await getAccount(id);
+    if (!account) return reply.code(404).send({ error: 'not_found' });
+    const result = await probeAccount(account);
+    return result;
   });
 }

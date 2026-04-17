@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import { users, type ApiKey, type User } from '../../db/schema.js';
 import { findActiveByPlaintext } from './keys.js';
+import { isOverQuota } from './quota.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -30,6 +31,12 @@ export async function requireApiKey(req: FastifyRequest, reply: FastifyReply): P
     return void reply
       .code(401)
       .send({ type: 'error', error: { type: 'authentication_error', message: 'invalid api key' } });
+  }
+  if (isOverQuota(key)) {
+    return void reply.code(429).send({
+      type: 'error',
+      error: { type: 'rate_limit_error', message: 'monthly token quota exhausted' },
+    });
   }
   const owner = (await db.select().from(users).where(eq(users.id, key.userId)).limit(1))[0] ?? null;
   req.apiKey = key;
