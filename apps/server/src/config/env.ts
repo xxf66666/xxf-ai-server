@@ -28,6 +28,7 @@ const schema = z.object({
     .string()
     .regex(/^[0-9a-fA-F]{64}$/, 'ENCRYPTION_KEY must be 64 hex chars (32 bytes)'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 chars'),
+  ADMIN_BOOTSTRAP_TOKEN: z.string().min(16).optional(),
 
   CLAUDE_OAUTH_CLIENT_ID: z.string().optional(),
   CHATGPT_OAUTH_CLIENT_ID: z.string().optional(),
