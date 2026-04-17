@@ -44,7 +44,9 @@ export async function createInvite(input: CreateInput): Promise<InviteCode> {
  * to avoid races when two registrations try the same code simultaneously.
  */
 export async function consumeInvite(code: string): Promise<InviteCode | null> {
-  const now = new Date();
+  // Let Postgres evaluate the expiry window itself — avoids shipping a
+  // JS Date through drizzle/postgres-js, which has historically had
+  // serialization quirks depending on the driver version.
   const result = await db.execute<{
     id: string;
     code: string;
@@ -61,7 +63,7 @@ export async function consumeInvite(code: string): Promise<InviteCode | null> {
      WHERE code = ${code}
        AND revoked = false
        AND use_count < max_uses
-       AND (expires_at IS NULL OR expires_at > ${now})
+       AND (expires_at IS NULL OR expires_at > now())
     RETURNING *
   `);
   const row = result[0];
