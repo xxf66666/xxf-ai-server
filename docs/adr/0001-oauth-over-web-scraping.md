@@ -1,48 +1,42 @@
-# ADR 0001 — Use OAuth (Claude Code / Codex CLI) rather than web-interface scraping
+# ADR 0001 — 选 OAuth 而非 claude.ai / chatgpt.com 网页逆向
 
-- **Status:** Accepted
-- **Date:** 2026-04-17
-- **Deciders:** xxf
+- **状态**：已采纳
+- **日期**：2026-04-17
+- **决策人**：xxf
 
-## Context
+## 背景
 
-To aggregate Claude Pro / Max and ChatGPT Plus / Pro subscriptions and re-expose them as
-a unified API, we need a transport that can talk to the upstream provider *on behalf of*
-the subscriber. Two paths exist:
+要把 Claude Pro / Max 和 ChatGPT Plus / Pro 订阅聚合成统一 API，需要一条"代表订阅者"
+与上游说话的传输通道。两条路径：
 
-1. **Web scraping** — drive `claude.ai` / `chatgpt.com` as a headless browser session,
-   maintain cookies, bypass Cloudflare challenges, parse HTML / WS frames.
-2. **OAuth via first-party CLIs** — the same OAuth flow Claude Code and Codex CLI use to
-   authenticate their API calls. The resulting access token can be used against upstream
-   API endpoints that return structured JSON / SSE.
+1. **网页逆向**：跑 headless 浏览器控制 `claude.ai` / `chatgpt.com`，维护 cookie，
+   过 Cloudflare 挑战，解析 HTML / WS 帧。
+2. **经第一方 CLI 的 OAuth**：Claude Code 和 Codex CLI 在做 API 调用时走的 OAuth
+   流程。拿到的 access token 能对打上游返回结构化 JSON / SSE 的 API 端点。
 
-## Decision
+## 决策
 
-Use the **OAuth path**. Ship no scraper.
+**走 OAuth**。不做任何爬虫。
 
-## Consequences
+## 后果
 
-**Positive**
+**优点**
 
-- Responses are already structured (same shape as the public API). No HTML parsing
-  fragility.
-- SSE streaming is native and stable — no wrestling with WS framing or chunked HTML.
-- Token lifecycle is explicit and refreshable — no cookie jar complexity, no CF clearance
-  loop.
-- Surface area for detection is smaller; the upstream sees something that looks like its
-  own first-party client.
+- 响应已是结构化（和公开 API 同 shape）。没有 HTML 解析脆弱性。
+- SSE 流式是原生的 —— 不用跟 WS 帧 / HTML chunk 格斗。
+- Token 生命周期显式且可 refresh —— 没有 cookie 池、没有 CF clearance 循环。
+- 检测面积更小；上游看到的像是它自己的第一方客户端。
 
-**Negative**
+**缺点**
 
-- Tied to the OAuth app registrations used by those CLIs. If upstream revokes or rotates
-  that `client_id`, we must follow.
-- The subset of models and features may lag the web interface slightly.
-- Still outside ToS for aggregation — see [security.md](../security.md). OAuth is *not* a
-  compliance fix; it is a stability fix.
+- 绑死在 CLI 用的 OAuth 应用注册。如果上游撤销 / 旋转 `client_id`，我们要跟进。
+- 模型 / feature 支持可能略滞后于网页端。
+- 聚合仍然在 ToS 之外（见 [security.md](../security.md)）。OAuth **不是**合规修复；
+  它是稳定性修复。
 
-## Alternatives considered
+## 备选方案
 
-- **Web scraping** — rejected primarily for operational cost; every provider UI change is
-  an outage. Secondarily because concurrent headless Chromium is expensive.
-- **Official API keys with subscriber reimbursement** — rejected by user: the whole point
-  of this gateway is to avoid API-pricing economics.
+- **网页逆向**：主要因运维成本被拒 —— 每次上游 UI 改版都是一次故障。其次并发
+  headless Chromium 资源开销大。
+- **官方 API Key + 订阅者报销**：用户明确放弃的路径 —— 做这个网关的主要意义就是绕开
+  API 按量定价经济。

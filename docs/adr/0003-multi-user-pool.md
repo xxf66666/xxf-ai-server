@@ -1,57 +1,45 @@
-# ADR 0003 — Multi-user contributed account pool
+# ADR 0003 — 多人共享的订阅账号池
 
-- **Status:** Accepted
-- **Date:** 2026-04-17
-- **Deciders:** xxf
+- **状态**：已采纳
+- **日期**：2026-04-17
+- **决策人**：xxf
 
-## Context
+## 背景
 
-The gateway is designed for a small team where several members already hold Claude Pro /
-Max or ChatGPT Plus / Pro subscriptions. The question is: should each member's account
-stay scoped to themselves, or should they pool into shared capacity?
+网关面向小团队设计，成员中多人已经有 Claude Pro / Max 或 ChatGPT Plus / Pro 订阅。
+问题：账号该严格隔离到各自，还是合并成共享容量？
 
-## Decision
+## 决策
 
-Support **both**, per account, via a boolean `shared` flag and an `owner_user_id`
-reference.
+**两者都支持**，每账号带一个 `shared` 布尔字段和一个 `owner_user_id` 外键。
 
-- `shared = false` — the account is usable **only** by API keys owned by
-  `owner_user_id`. Personal-use mode.
-- `shared = true` — the account joins a public pool; any API key in the system can route
-  through it. Contributor mode.
+- `shared = false` —— 该账号**只**能被 `owner_user_id` 的 API Key 走。个人使用模式。
+- `shared = true` —— 加入公共池；任何 Key 都可能路由到。贡献者模式。
 
-Scheduling preference: when selecting for a request, **owner-matched accounts win over
-shared-pool accounts**, all else equal. This prevents a contributor's own calls from
-being starved by other users when their account is healthy.
+调度偏好：选号时**owner 匹配的账号**在其他条件相同时优先于共享池。避免贡献者自己的
+请求被池里其他用户抢跑。
 
-## Consequences
+## 后果
 
-**Positive**
+**优点**
 
-- Non-committal onboarding: a new contributor can attach their account in "private" mode
-  first, get comfortable, then flip the share toggle later.
-- Accountability: every account has a human owner reachable for reauth / ban recovery.
-- Abuse isolation: when reselling, operator can price shared-pool access higher and gate
-  it per-key.
+- 入场低门槛：新贡献者可以先挂"私有"模式熟悉一段，再翻开共享开关。
+- 问责性：每个账号都有一个能找到的 owner，用于 re-auth / 封禁恢复。
+- 滥用隔离：对外售卖时能把共享池入口定高价并按 key gate。
 
-**Negative**
+**缺点**
 
-- Scheduler logic is slightly more complex — must compute two candidate sets per request.
-- UI must render the private / shared distinction clearly to avoid surprises
-  ("why is my account being used?").
+- 调度器多一点分支（要算两个候选集合）。
+- UI 要清晰展示"私有 / 共享"区别，避免"为什么我的账号被别人用？"的困惑。
 
-## Implementation notes
+## 实现细节
 
-- The `owner_user_id` is set at attach time and immutable.
-- Toggling `shared` is a simple UI action, takes effect immediately (new requests pick it
-  up; in-flight requests are unaffected).
-- When `shared` flips **off**, in-flight requests that chose this account finish; no
-  forced disconnect.
+- `owner_user_id` 在挂号时定，**不可变**。
+- 切 `shared` 开关是 UI 一键操作，立刻生效（新请求感知；在途请求不受影响）。
+- `shared` 从 true 翻到 false，正在用该账号的请求正常完成，不强断。
 
-## Alternatives considered
+## 备选方案
 
-- **Always shared** — simpler but deters contributors worried about quota being drained.
-- **Always private** — loses the network-effect benefit of pooling capacity, and the
-  "resale" use case becomes impossible.
-- **Per-key allowlist of accounts** — more granular but adds a many-to-many table and
-  admin overhead. Revisit if we get a concrete need for it.
+- **全共享**：简单但降低了担心配额被别人打光的贡献者的积极性。
+- **全私有**：放弃了聚合容量的网络效应，"代销"场景也不成立。
+- **per-key 白名单**：更细但增加多对多表和运维成本。要有具体需求时再做。

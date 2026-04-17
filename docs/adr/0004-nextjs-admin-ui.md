@@ -1,52 +1,50 @@
-# ADR 0004 — Next.js 15 for the admin UI
+# ADR 0004 — 选 Next.js 15 做管理 UI
 
-- **Status:** Accepted
-- **Date:** 2026-04-17
-- **Deciders:** xxf
+- **状态**：已采纳
+- **日期**：2026-04-17
+- **决策人**：xxf
 
-## Context
+## 背景
 
-The gateway needs a web admin UI: account lifecycle, users and API keys, usage
-dashboards, settings. Options considered: Next.js (App Router), Vite + React SPA,
-Refine.dev, Remix.
+网关需要一个 Web 管理 UI：账号生命周期、用户和 API Key、用量看板、设置。备选：
+Next.js（App Router）、Vite + React SPA、Refine.dev、Remix。
 
-## Decision
+## 决策
 
-**Next.js 15 App Router** with **Tailwind CSS** and **shadcn/ui** components.
+**Next.js 15 App Router**，搭配 **Tailwind CSS** 和 **shadcn/ui** 风格组件。
 
-## Consequences
+## 后果
 
-**Positive**
+**优点**
 
-- App Router + Server Components reduce hand-rolled data-fetching glue for list/table
-  pages.
-- `shadcn/ui` provides production-grade components that the team copy-pastes rather than
-  depending on a UI library — very low lock-in.
-- Large community template pool (`shadcn-admin`, `next-shadcn-dashboard`) to bootstrap
-  from.
-- Same Node.js toolchain as the server — one `pnpm install`, one Dockerfile per app, one
-  CI pipeline.
+- App Router + Server Components 给列表 / 表格页省去大量数据获取胶水。
+- `shadcn/ui` 提供生产级组件，团队是 copy-paste 而非依赖一个 UI 库 —— 锁定度极低。
+- 社区模板池大（`shadcn-admin`、`next-shadcn-dashboard`）可启动参考。
+- 和 server 同 Node.js 工具链 —— 一次 `pnpm install`、每 app 一个 Dockerfile、
+  同一条 CI。
 
-**Negative**
+**缺点**
 
-- Next.js image is heavier than a pure-static Vite SPA; containers are ~100 MB larger.
-  Mitigated by standalone output (`output: 'standalone'`) and running in the same
-  Docker Compose stack behind Caddy.
-- App Router's server-components model requires discipline on the server/client
-  boundary; we will avoid putting API-key secrets into server components that might leak
-  into RSC payloads.
+- Next.js 镜像比纯静态 Vite SPA 重；容器大 ~100 MB。用 `output: 'standalone'`
+  + 放同一个 Docker Compose 栈里 Caddy 后，能接受。
+- App Router 的 server-components 模型要求严格的 server/client 边界约束；我们刻意
+  不把 API Key 密文放 server component，避免漏到 RSC payload。
 
-## Alternatives considered
+## 备选方案
 
-- **Vite + React SPA** — lighter and simpler, but loses App Router's data-fetch
-  ergonomics, and the team would reinvent layouts / auth boundary that Next gives for
-  free.
-- **Refine.dev** — fast CRUD scaffolding, but it's a framework-on-a-framework and the
-  admin surface here is small enough that Next + shadcn hand-rolling stays cleaner.
-- **Remix** — comparable to Next, but smaller template pool for admin dashboards, and
-  the team is more familiar with Next.
+- **Vite + React SPA**：更轻更简，但失去 App Router 的数据获取符号学，团队得自己实现
+  Next 免费给的 layout / auth boundary。
+- **Refine.dev**：CRUD 快手，但它是"框架-上-框架"。我们这管理面够小，Next + shadcn
+  手卷更干净。
+- **Remix**：对比 Next 旗鼓相当，但管理台模板池小，团队更熟 Next。
 
-## Out of scope
+## 后续扩展
 
-No public-facing web surface is planned for now — any end-user chat UI stays out, per
-[architecture.md §7](../architecture.md#7-non-goals-for-now).
+之后多了**消费者 C 端**（`/console/*`），也用同一个 Next app 宿主 —— 两个路由组
+共享 i18n、React Query、provider、组件 —— 没有因为 B 端 + C 端分开而引入框架双栈，
+验证了 Next.js 的选择合理。
+
+## 非目标
+
+目前不做面向终端用户的聊天 UI —— 任何端到端 Chat UI 都不在当前范围，见
+[architecture.md §7](../architecture.md#7-非目标)。

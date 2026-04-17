@@ -1,32 +1,35 @@
-# Documentation
+# 文档中心
 
-Navigation hub for the `xxf-ai-server` documentation set.
+`xxf-ai-server` 文档集的索引。
 
-## For everyone
+## 所有人读
 
-- [architecture.md](architecture.md) — System overview, components, data flow, data model.
-- [roadmap.md](roadmap.md) — Phased delivery plan P0 → P5.
+- [architecture.md](architecture.md) — 系统架构、组件、数据流、数据模型
+- [roadmap.md](roadmap.md) — 分阶段路线图 P0–P5 + 扩展
+- [quickstart.md](quickstart.md) — 10 分钟快速上手（运维方 + 消费者双路径）
 
-## For developers
+## 开发者读
 
-- [api.md](api.md) — Public API surface (Anthropic & OpenAI compatibility) and admin API.
-- [../CONTRIBUTING.md](../CONTRIBUTING.md) — Workflow, commit style, review conventions.
+- [api.md](api.md) — 完整 API 端点参考（Anthropic、OpenAI、公开、控制台、管理台）
+- [../CONTRIBUTING.md](../CONTRIBUTING.md) — 分支策略、commit 规范、代码风格
 
-## For operators
+## 运维读
 
-- [deployment.md](deployment.md) — Deploy on a single VPS with Docker Compose + Caddy.
-- [operations.md](operations.md) — Day-two runbook: rotating proxies, cooling accounts,
-  handling bans, capacity planning.
-- [security.md](security.md) — Threat model, token-at-rest encryption, ToS risk posture.
+- [deployment.md](deployment.md) — 单机 VPS 部署（Docker Compose + Caddy）
+- [operations.md](operations.md) — 日常运维：邀请码分发、账号冷却、代理轮换、应急处置
+- [security.md](security.md) — 威胁模型、加密 / RBAC / 审计、ToS 风险
 
-## Decisions
+## 架构决策记录（ADR）
 
-Architecture Decision Records ([ADRs](adr/)) capture choices that are costly to reverse:
+决策成本高难撤销，每个决策留一份追溯：
 
-- [0001 — OAuth over web scraping](adr/0001-oauth-over-web-scraping.md)
-- [0002 — Node.js + Fastify + Drizzle stack](adr/0002-nodejs-fastify-stack.md)
-- [0003 — Multi-user contributed account pool](adr/0003-multi-user-pool.md)
-- [0004 — Next.js 15 admin UI](adr/0004-nextjs-admin-ui.md)
+- [0001 — OAuth 而非网页逆向](adr/0001-oauth-over-web-scraping.md)
+- [0002 — Node.js + Fastify + Drizzle 技术栈](adr/0002-nodejs-fastify-stack.md)
+- [0003 — 多人共享账号池](adr/0003-multi-user-pool.md)
+- [0004 — Next.js 15 作为管理 UI 框架](adr/0004-nextjs-admin-ui.md)
+- [0005 — 计费模型：统一折扣 + micro-USD + 欢迎额度](adr/0005-pricing-model.md)
+- [0006 — 邀请码限制注册](adr/0006-invite-gated-registration.md)
+- [0007 — i18n 扁平化字典方案](adr/0007-i18n-approach.md)
 
-New decisions should add a sequentially numbered ADR; obsoleted ones are **superseded**
-(linked forward), never deleted.
+新决策应追加下一个编号的 ADR；已过期的 ADR 标注 **superseded** 并链接到新的，
+**不删除**。

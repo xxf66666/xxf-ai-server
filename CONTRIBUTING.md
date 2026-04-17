@@ -1,63 +1,61 @@
-# Contributing
+# 贡献指南
 
-Thanks for considering a contribution! This document captures the conventions the project
-follows. For context, start with the [README](README.md) and
-[architecture doc](docs/architecture.md).
+感谢愿意参与！本文档记录项目遵循的工程规范。先看 [README](README.md) 和
+[架构文档](docs/architecture.md) 了解背景。
 
-## Development setup
+## 开发环境
 
-1. Install **Node.js 20+** and **pnpm 9+**.
-2. `cp .env.example .env` and fill in values where needed.
-3. `docker compose up -d postgres redis`.
-4. `pnpm install && pnpm dev`.
+1. 装 **Node.js 20+** 和 **pnpm 9+**
+2. `cp .env.example .env`，按需改
+3. `docker compose up -d postgres redis`
+4. `pnpm install && pnpm --filter @xxf/shared build && pnpm dev`
 
-## Branching
+## 分支策略
 
-- `main` — always deployable. Protected; only PR merges.
-- `dev` — integration branch for in-progress features.
-- `feature/<slug>`, `fix/<slug>`, `chore/<slug>` — short-lived topic branches.
+- `main` —— 任意时刻可部署，受保护；只允 PR 合入
+- `dev` —— 进行中 feature 的集成分支
+- `feature/<slug>`、`fix/<slug>`、`chore/<slug>` —— 短命主题分支
 
-## Commit messages — Conventional Commits
+## Commit 规范 —— Conventional Commits
 
-Use the [Conventional Commits](https://www.conventionalcommits.org/) format:
+采用 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/) 格式：
 
 ```
-<type>(<scope>): <short imperative summary>
+<type>(<scope>): <简短祈使句>
 
-<body — the WHY, not the what>
+<正文 —— 说 WHY，不是 what>
 
-<footer — breaking changes, refs>
+<脚注 —— breaking change、引用>
 ```
 
-Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `build`, `ci`.
+常用 type：`feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`perf`、`build`、`ci`。
 
-Examples:
+示例：
 
 - `feat(accounts): add 5h rolling-window quota tracker`
 - `fix(relay): prevent SSE chunk splitting across buffers`
 - `docs(adr): record decision to use Drizzle over Prisma`
 
-## Pull requests
+## Pull Request
 
-- Keep PRs focused. One feature / fix / refactor per PR.
-- Include a short description: problem, approach, tradeoffs.
-- Update docs and CHANGELOG when behaviour changes.
-- Pass `pnpm lint`, `pnpm typecheck`, `pnpm test` locally before requesting review.
+- 聚焦：一个 feature / fix / refactor 一个 PR
+- 包含简短描述：问题、方案、取舍
+- 行为改动同步更新 docs 和 CHANGELOG
+- 本地跑绿 `pnpm lint`、`pnpm typecheck`、`pnpm test` 再请 review
 
-## Code style
+## 代码风格
 
-- TypeScript strict mode everywhere.
-- Prefer small, composable modules over large service classes.
-- Write comments only when the *why* is non-obvious — avoid narrating *what*.
-- No mock DBs in integration tests — hit a real Postgres via Docker.
+- 所有 TS 开 strict
+- 偏小而组合的模块，不堆大 service 类
+- **默认不写注释**。只有 *why* 非显然时才加一条 —— 避免叙述 *what*
+- 集成测试**不 mock DB**，用 Docker 起真 Postgres
 
-## Architecture Decision Records
+## 架构决策记录（ADR）
 
-For any decision that's hard to reverse (stack choice, protocol choice, data model), add an
-ADR under `docs/adr/`. Copy `docs/adr/0001-oauth-over-web-scraping.md` as a template. Number
-sequentially, never delete — supersede instead.
+涉及难以撤销的决策（栈选型、协议选型、数据模型）要加 ADR 到 `docs/adr/`。
+拷贝 `docs/adr/0001-oauth-over-web-scraping.md` 做模板。顺序编号，**不删除** —— 过期的
+标 superseded。
 
-## Security
+## 安全
 
-Never commit `.env` files, OAuth tokens, or production secrets. If you discover a security
-issue, please open a **private** report rather than a public issue.
+永远不提交 `.env`、OAuth token、生产密钥。发现安全问题请走**私下上报**而非公开 issue。
