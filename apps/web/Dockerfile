@@ -1,5 +1,5 @@
 # ---------- deps ----------
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /repo
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
@@ -8,7 +8,7 @@ COPY packages/shared/package.json ./packages/shared/
 RUN pnpm install --frozen-lockfile || pnpm install
 
 # ---------- build ----------
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /repo
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 COPY --from=deps /repo/node_modules ./node_modules
@@ -19,7 +19,7 @@ RUN pnpm --filter @xxf/shared build
 RUN pnpm --filter @xxf/web build
 
 # ---------- runtime ----------
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000

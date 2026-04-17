@@ -5,7 +5,7 @@
 # This is how pnpm officially packages a single workspace app for Docker —
 # plain symlink copies break because pnpm's node_modules is a link farm
 # pointing back into the repo-root .pnpm store.
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /repo
 RUN apk add --no-cache python3 make g++ libc6-compat
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
@@ -16,7 +16,7 @@ RUN pnpm --filter @xxf/server build
 RUN pnpm --filter @xxf/server deploy --prod /deploy
 
 # Runtime image: minimal, non-root, just the deployed artifact.
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 RUN apk add --no-cache libc6-compat \
