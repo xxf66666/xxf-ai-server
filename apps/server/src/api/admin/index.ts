@@ -4,6 +4,7 @@ import { registerAdminAccounts } from './accounts.js';
 import { registerAdminApiKeys } from './api-keys.js';
 import { registerAdminAudit } from './audit.js';
 import { registerAdminAuth } from './auth.js';
+import { registerAdminProxies } from './proxies.js';
 import { registerAdminSettings } from './settings.js';
 import { registerAdminStats } from './stats.js';
 import { registerAdminUsers } from './users.js';
@@ -23,6 +24,7 @@ export async function registerAdmin(app: FastifyInstance): Promise<void> {
   await registerAdminAccounts(app);
   await registerAdminApiKeys(app);
   await registerAdminAudit(app);
+  await registerAdminProxies(app);
   await registerAdminSettings(app);
   await registerAdminStats(app);
   await registerAdminUsers(app);

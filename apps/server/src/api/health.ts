@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { db } from '../db/client.js';
 import { redis } from '../cache/redis.js';
 import { sql } from 'drizzle-orm';
+import { registry } from '../utils/metrics.js';
 
 export async function registerHealth(app: FastifyInstance): Promise<void> {
   app.get('/healthz', async () => ({ ok: true }));
@@ -32,4 +33,11 @@ export async function registerHealth(app: FastifyInstance): Promise<void> {
     version: process.env.npm_package_version ?? '0.0.0',
     commit: process.env.GIT_COMMIT ?? 'unknown',
   }));
+
+  // Prometheus scrape target. Deliberately NOT behind admin auth — put it
+  // behind a separate Caddy path rule if you want IP-allowlisting.
+  app.get('/metrics', async (_req, reply) => {
+    const body = await registry.metrics();
+    return reply.header('content-type', registry.contentType).send(body);
+  });
 }

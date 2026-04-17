@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { BarChart3, Boxes, KeyRound, LayoutDashboard, LogOut, Settings, Users } from 'lucide-react';
+import { BarChart3, Boxes, KeyRound, LayoutDashboard, LogOut, Network, Settings, Users } from 'lucide-react';
 import { apiFetch } from '../../lib/api';
 import { clearBootstrapToken } from '../../lib/auth';
 
@@ -12,6 +12,7 @@ const nav = [
   { href: '/accounts', label: 'Accounts', icon: Boxes },
   { href: '/users', label: 'Users', icon: Users },
   { href: '/keys', label: 'API keys', icon: KeyRound },
+  { href: '/proxies', label: 'Proxies', icon: Network },
   { href: '/stats', label: 'Stats', icon: BarChart3 },
   { href: '/settings', label: 'Settings', icon: Settings },
 ] as const;
@@ -61,9 +62,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
         <nav className="flex-1 space-y-1">
           {nav.map(({ href, label, icon: Icon }) => (
+            // Cast needed because typedRoutes doesn't know about routes
+            // until the first build; we add new pages faster than the cache
+            // regenerates.
             <Link
               key={href}
-              href={href}
+              href={href as never}
               className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted"
             >
               <Icon className="h-4 w-4" />

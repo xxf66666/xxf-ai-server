@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: xxfai
+          POSTGRES_USER: xxfai
+          POSTGRES_PASSWORD: xxfai
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U xxfai -d xxfai"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared
+        run: pnpm --filter @xxf/shared build
+
+      - name: Typecheck server
+        run: pnpm --filter @xxf/server typecheck
+
+      - name: Typecheck web
+        run: pnpm --filter @xxf/web typecheck
+
+      - name: Build server
+        run: pnpm --filter @xxf/server build
+
+      - name: Build web
+        run: pnpm --filter @xxf/web build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+
+      - name: Format check
+        run: pnpm format:check

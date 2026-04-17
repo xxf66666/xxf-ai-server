@@ -8,6 +8,7 @@ import {
 } from '../oauth/claude.js';
 import { ensureFreshAccessToken } from '../oauth/refresh.js';
 import { applyClassification, classifyUpstream, type Classification } from './health.js';
+import { getDispatcher } from '../proxies/index.js';
 import { logger } from '../../utils/logger.js';
 
 export interface ProbeResult {
@@ -33,6 +34,7 @@ export async function probeAccount(account: Account): Promise<ProbeResult> {
     return { ok: false, status: 0, classification: 'needs_reauth', latencyMs: 0 };
   }
 
+  const dispatcher = await getDispatcher(account.proxyId);
   let res: Response;
   try {
     res = await fetch(`${CLAUDE_UPSTREAM_BASE}${CLAUDE_MESSAGES_PATH}`, {
@@ -43,7 +45,8 @@ export async function probeAccount(account: Account): Promise<ProbeResult> {
         max_tokens: 1,
         messages: [{ role: 'user', content: 'ping' }],
       }),
-    });
+      ...(dispatcher ? { dispatcher } : {}),
+    } as RequestInit);
   } catch (err) {
     logger.warn({ err, accountId: account.id }, 'probe fetch failed');
     await stampProbe(account.id, false);

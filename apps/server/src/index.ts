@@ -12,6 +12,7 @@ import { installOutboundProxy } from './utils/proxy.js';
 import { redis } from './cache/redis.js';
 import { registerHealth } from './api/health.js';
 import { registerAnthropic } from './api/anthropic/messages.js';
+import { registerOpenAI } from './api/openai/chat.js';
 import { registerAdmin } from './api/admin/index.js';
 import { runMigrations } from './db/migrate.js';
 import { startWorkers } from './workers/index.js';
@@ -67,6 +68,7 @@ async function main() {
   await registerHealth(app);
   await registerAdmin(app);
   await registerAnthropic(app);
+  await registerOpenAI(app);
 
   try {
     await app.listen({ host: env.SERVER_HOST, port: env.SERVER_PORT });

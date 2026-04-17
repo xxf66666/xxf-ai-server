@@ -15,6 +15,8 @@ import { applyClassification, classifyUpstream } from '../accounts/health.js';
 import { recordKeyUsage } from '../users/quota.js';
 import { createUsageAccumulator } from './stream.js';
 import { isOpen, recordRequest } from './breaker.js';
+import { getDispatcher } from '../proxies/index.js';
+import { relayLatencyMs, relayRequests, relayTokens } from '../../utils/metrics.js';
 
 export interface RelayContext {
   account: Account;
@@ -55,13 +57,15 @@ export async function relayMessages(
   }
 
   const upstreamUrl = `${CLAUDE_UPSTREAM_BASE}${CLAUDE_MESSAGES_PATH}`;
+  const dispatcher = await getDispatcher(ctx.account.proxyId);
   let upstream: Response;
   try {
     upstream = await fetch(upstreamUrl, {
       method: 'POST',
       headers: claudeAuthHeaders(accessToken),
       body: JSON.stringify(body),
-    });
+      ...(dispatcher ? { dispatcher } : {}),
+    } as RequestInit);
   } catch (err) {
     logger.error({ err, accountId: ctx.account.id }, 'upstream fetch failed');
     await Promise.all([
@@ -83,6 +87,8 @@ export async function relayMessages(
       logUsage(ctx, model, 0, 0, latencyMs, upstream.status, classification.kind),
       recordRequest('claude', true),
     ]);
+    relayRequests.inc({ provider: 'claude', route: 'messages', outcome: classification.kind });
+    relayLatencyMs.observe({ provider: 'claude', route: 'messages' }, latencyMs);
     reply.code(upstream.status).header('content-type', 'application/json');
     return reply.send(safeJson(text) ?? { type: 'error', error: { type: 'api_error', message: text } });
   }
@@ -121,6 +127,10 @@ export async function relayMessages(
         recordKeyUsage(ctx.apiKey.id, total).catch(() => {}),
         recordRequest('claude', false),
       ]);
+      relayRequests.inc({ provider: 'claude', route: 'messages', outcome: 'ok' });
+      relayLatencyMs.observe({ provider: 'claude', route: 'messages' }, latencyMs);
+      relayTokens.inc({ provider: 'claude', direction: 'input' }, usage.inputTokens);
+      relayTokens.inc({ provider: 'claude', direction: 'output' }, usage.outputTokens);
     }
     return;
   }
@@ -139,6 +149,10 @@ export async function relayMessages(
     recordKeyUsage(ctx.apiKey.id, total).catch(() => {}),
     recordRequest('claude', false),
   ]);
+  relayRequests.inc({ provider: 'claude', route: 'messages', outcome: 'ok' });
+  relayLatencyMs.observe({ provider: 'claude', route: 'messages' }, latencyMs);
+  relayTokens.inc({ provider: 'claude', direction: 'input' }, input);
+  relayTokens.inc({ provider: 'claude', direction: 'output' }, output);
   reply.code(upstream.status).header('content-type', 'application/json');
   return reply.send(parsed ?? text);
 }

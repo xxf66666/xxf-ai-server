@@ -101,10 +101,20 @@ export async function registerAdminAccounts(app: FastifyInstance): Promise<void>
       .object({
         status: z.enum(['active', 'cooling', 'rate_limited', 'needs_reauth', 'banned']).optional(),
         coolingUntil: z.string().datetime().nullable().optional(),
+        shared: z.boolean().optional(),
+        proxyId: z.string().uuid().nullable().optional(),
+        label: z.string().max(120).optional(),
       })
       .parse(req.body);
     if (body.status) {
       await setAccountStatus(id, body.status, body.coolingUntil ? new Date(body.coolingUntil) : null);
+    }
+    if (body.shared !== undefined || body.proxyId !== undefined || body.label !== undefined) {
+      const patch: Record<string, unknown> = { updatedAt: new Date() };
+      if (body.shared !== undefined) patch.shared = body.shared;
+      if (body.proxyId !== undefined) patch.proxyId = body.proxyId;
+      if (body.label !== undefined) patch.label = body.label;
+      await db.update(accounts).set(patch).where(eq(accounts.id, id));
     }
     const updated = await getAccount(id);
     if (!updated) return reply.code(404).send({ error: 'not_found' });
