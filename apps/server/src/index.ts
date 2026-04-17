@@ -8,7 +8,7 @@ import { logger } from './utils/logger.js';
 import { registerHealth } from './api/health.js';
 
 async function main() {
-  const app = Fastify({ logger, disableRequestLogging: false, trustProxy: true });
+  const app = Fastify({ loggerInstance: logger, disableRequestLogging: false, trustProxy: true });
 
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(cors, { origin: true, credentials: true });

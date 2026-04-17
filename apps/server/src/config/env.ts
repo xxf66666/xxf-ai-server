@@ -1,5 +1,17 @@
-import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { z } from 'zod';
+
+// Load .env from repo root (monorepo) first, falling back to CWD for Docker runtime.
+const here = dirname(fileURLToPath(import.meta.url));
+const repoRootEnv = resolve(here, '../../../../.env');
+if (existsSync(repoRootEnv)) {
+  loadEnv({ path: repoRootEnv });
+} else {
+  loadEnv();
+}
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
