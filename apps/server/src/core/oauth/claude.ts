@@ -18,11 +18,27 @@ export const CLAUDE_OAUTH_BETA = 'oauth-2025-04-20';
 export const CLAUDE_OAUTH_CLIENT_ID =
   process.env.CLAUDE_OAUTH_CLIENT_ID ?? '9d1c250a-e61b-44d9-88ed-5944d1962f5e';
 
-export function claudeAuthHeaders(accessToken: string): Record<string, string> {
+export function claudeAuthHeaders(
+  accessToken: string,
+  clientBeta?: string | string[],
+): Record<string, string> {
+  // Merge whatever beta tags the client sent with our required oauth beta.
+  // Claude Code sends a comma-joined list like
+  //   `claude-code-20250219,fine-grained-tool-streaming-2025-05-14,...`
+  // — dropping these makes Anthropic reject fields like `context_management`
+  // with a 400 "Extra inputs are not permitted" validation error.
+  const clientList = Array.isArray(clientBeta)
+    ? clientBeta.join(',')
+    : clientBeta ?? '';
+  const parts = clientList
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (!parts.includes(CLAUDE_OAUTH_BETA)) parts.push(CLAUDE_OAUTH_BETA);
   return {
     'Authorization': `Bearer ${accessToken}`,
     'anthropic-version': CLAUDE_ANTHROPIC_VERSION,
-    'anthropic-beta': CLAUDE_OAUTH_BETA,
+    'anthropic-beta': parts.join(','),
     'Content-Type': 'application/json',
   };
 }

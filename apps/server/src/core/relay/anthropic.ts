@@ -60,11 +60,12 @@ export async function relayMessages(
 
   const upstreamUrl = `${CLAUDE_UPSTREAM_BASE}${CLAUDE_MESSAGES_PATH}`;
   const dispatcher = await getDispatcher(ctx.account.proxyId);
+  const clientBeta = req.headers['anthropic-beta'];
   let upstream: Response;
   try {
     upstream = await fetch(upstreamUrl, {
       method: 'POST',
-      headers: claudeAuthHeaders(accessToken),
+      headers: claudeAuthHeaders(accessToken, clientBeta),
       body: JSON.stringify(body),
       ...(dispatcher ? { dispatcher } : {}),
     } as RequestInit);
