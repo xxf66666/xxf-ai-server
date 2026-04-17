@@ -1,0 +1,34 @@
+# Replace ai.example.com with your real domain before first boot.
+# Caddy will auto-provision a Let's Encrypt cert on first request.
+
+ai.example.com {
+    encode zstd gzip
+
+    # Gateway: public relay API + admin JSON API
+    @api path /v1/* /admin/* /healthz /readyz /version
+    handle @api {
+        reverse_proxy server:8787 {
+            flush_interval -1
+            transport http {
+                read_timeout  0
+                write_timeout 0
+            }
+        }
+    }
+
+    # Everything else → Next.js admin UI
+    handle {
+        reverse_proxy web:3000
+    }
+
+    log {
+        output stdout
+        format console
+    }
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options    "nosniff"
+        Referrer-Policy           "strict-origin-when-cross-origin"
+    }
+}
