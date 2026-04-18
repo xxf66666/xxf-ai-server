@@ -18,6 +18,14 @@ export const relayLatencyMs = new Histogram({
   registers: [registry],
 });
 
+export const relayTtfbMs = new Histogram({
+  name: 'xxf_relay_ttfb_ms',
+  help: 'Time (ms) from upstream request sent to first streamed byte — proxy for model prefill time.',
+  labelNames: ['provider', 'route'],
+  buckets: [50, 100, 250, 500, 1000, 2500, 5000, 10_000, 30_000, 60_000],
+  registers: [registry],
+});
+
 export const relayTokens = new Counter({
   name: 'xxf_relay_tokens_total',
   help: 'Total tokens consumed via the relay, by provider and direction.',

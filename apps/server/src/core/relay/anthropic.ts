@@ -18,7 +18,7 @@ import { computeCost } from '../pricing/index.js';
 import { createUsageAccumulator } from './stream.js';
 import { isOpen, recordRequest } from './breaker.js';
 import { getDispatcher } from '../proxies/index.js';
-import { relayLatencyMs, relayRequests, relayTokens } from '../../utils/metrics.js';
+import { relayLatencyMs, relayRequests, relayTokens, relayTtfbMs } from '../../utils/metrics.js';
 
 export interface RelayContext {
   account: Account;
@@ -107,6 +107,7 @@ export async function relayMessages(
     });
 
     const usage = createUsageAccumulator();
+    usage.start();
     const reader = upstream.body.getReader();
     try {
       for (;;) {
@@ -124,6 +125,27 @@ export async function relayMessages(
       const latencyMs = Date.now() - startedAt;
       const total = usage.inputTokens + usage.outputTokens;
       const costMud = await computeCost(model, usage.inputTokens, usage.outputTokens).catch(() => 0);
+      // Log TTFB separately so we can distinguish "prefill was slow"
+      // from "output was slow". If ttfb dominates total, user's context
+      // is huge / upstream prefill is cold; if ttfb is tiny but total
+      // is big, we're just generating a lot of output tokens.
+      logger.info(
+        {
+          accountId: ctx.account.id,
+          model,
+          latencyMs,
+          ttfbMs: usage.ttfbMs,
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+          tokPerSec:
+            usage.outputTokens > 0 && latencyMs > (usage.ttfbMs ?? 0)
+              ? Math.round(
+                  (usage.outputTokens * 1000) / (latencyMs - (usage.ttfbMs ?? 0)),
+                )
+              : null,
+        },
+        'relay_complete',
+      );
       await Promise.all([
         logUsage(ctx, model, usage.inputTokens, usage.outputTokens, latencyMs, 200, null, costMud),
         incrementWindowUsage(ctx.account.id, total).catch(() => {}),
@@ -134,6 +156,9 @@ export async function relayMessages(
       ]);
       relayRequests.inc({ provider: 'claude', route: 'messages', outcome: 'ok' });
       relayLatencyMs.observe({ provider: 'claude', route: 'messages' }, latencyMs);
+      if (usage.ttfbMs !== null) {
+        relayTtfbMs.observe({ provider: 'claude', route: 'messages' }, usage.ttfbMs);
+      }
       relayTokens.inc({ provider: 'claude', direction: 'input' }, usage.inputTokens);
       relayTokens.inc({ provider: 'claude', direction: 'output' }, usage.outputTokens);
     }
