@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { LocaleSwitcher } from '../lib/i18n/LocaleSwitcher';
+import { NexaLogo } from './NexaLogo';
 
 // Shared glassy card shell for /login and /register. Keeps a single
 // visual identity across auth surfaces — gradient background blob,
@@ -30,9 +31,9 @@ export function AuthShell({
       <div className="absolute left-4 top-4 flex items-center gap-2">
         <Link
           href="/"
-          className="rounded-md border border-border bg-background/80 px-3 py-1.5 text-xs font-medium backdrop-blur hover:bg-background"
+          className="flex items-center gap-2 rounded-md border border-border bg-background/80 px-3 py-1.5 backdrop-blur hover:bg-background"
         >
-          ← xxf-ai-server
+          <NexaLogo size={20} withWordmark />
         </Link>
       </div>
       <div className="absolute right-4 top-4">

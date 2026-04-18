@@ -47,11 +47,11 @@ async function send(opts: {
 }
 
 export async function sendVerificationEmail(to: string, verifyUrl: string): Promise<SendResult> {
-  const subject = '验证你的 xxf-ai-server 邮箱 / Verify your email';
+  const subject = '验证你的 Nexa 邮箱 / Verify your email';
   const text = [
     `你好，`,
     ``,
-    `有人（希望是你本人）在 xxf-ai-server 注册了这个邮箱。`,
+    `有人（希望是你本人）在 Nexa 注册了这个邮箱。`,
     `点下面链接完成验证（48 小时内有效）：`,
     verifyUrl,
     ``,
@@ -60,7 +60,7 @@ export async function sendVerificationEmail(to: string, verifyUrl: string): Prom
     `---`,
     `Hello,`,
     ``,
-    `Someone (hopefully you) registered this email on xxf-ai-server.`,
+    `Someone (hopefully you) registered this email on Nexa.`,
     `Click the link below to verify (valid for 48 hours):`,
     verifyUrl,
     ``,
@@ -71,7 +71,7 @@ export async function sendVerificationEmail(to: string, verifyUrl: string): Prom
       <div style="border-radius:12px;border:1px solid #e5e7eb;padding:32px;background:#fff">
         <div style="font-weight:600;font-size:18px;margin-bottom:8px">验证你的邮箱</div>
         <p style="font-size:14px;line-height:1.6;color:#4b5563">
-          有人（希望是你本人）在 <b>xxf-ai-server</b> 注册了这个邮箱。
+          有人（希望是你本人）在 <b>Nexa</b> 注册了这个邮箱。
           点下方按钮完成验证 —— 链接 <b>48 小时内有效</b>，且只能使用一次。
         </p>
         <p style="margin:24px 0">
@@ -86,7 +86,7 @@ export async function sendVerificationEmail(to: string, verifyUrl: string): Prom
         <hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb"/>
         <p style="font-size:12px;color:#9ca3af;line-height:1.5">
           不是你本人操作？请忽略这封邮件。<br/>
-          — xxf-ai-server
+          — Nexa
         </p>
       </div>
     </div>

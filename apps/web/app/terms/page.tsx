@@ -17,7 +17,7 @@ export default function TermsPage() {
 
       <H2>1. 服务概述</H2>
       <p>
-        xxf-ai-server（"本站"）是一个独立运营的 AI API 网关，把 Anthropic Claude 和 OpenAI
+        Nexa（"本站"）是一个独立运营的 AI API 网关，把 Anthropic Claude 和 OpenAI
         的订阅账号资源聚合后，以按 token 计费的方式对注册用户提供统一 API 服务。
         <strong>本站非 Anthropic、非 OpenAI 的官方服务</strong>，也未获得它们的商业合作或背书。
       </p>

@@ -44,7 +44,7 @@ export const en = {
 
   // --- login ---
   'login.title': 'Sign in',
-  'login.subtitle': 'xxf-ai-server admin',
+  'login.subtitle': 'Nexa admin',
   'login.tab.password': 'Email + password',
   'login.tab.bootstrap': 'Bootstrap token',
   'login.email': 'Email',
@@ -254,7 +254,7 @@ export const en = {
 
   // --- docs ---
   'docs.title': 'Integration docs',
-  'docs.subtitle': 'How to point AI coding tools at xxf-ai-server.',
+  'docs.subtitle': 'How to point AI coding tools at Nexa.',
   'docs.claudeCode.h': 'Claude Code',
   'docs.cline.h': 'Cline (VSCode)',
   'docs.cursor.h': 'Cursor',
@@ -517,7 +517,7 @@ export const zh: Dict = {
 
   // --- login ---
   'login.title': '登录',
-  'login.subtitle': 'xxf-ai-server 管理台',
+  'login.subtitle': 'Nexa 管理台',
   'login.tab.password': '邮箱 + 密码',
   'login.tab.bootstrap': '引导令牌',
   'login.email': '邮箱',
@@ -724,7 +724,7 @@ export const zh: Dict = {
 
   // --- docs ---
   'docs.title': '接入文档',
-  'docs.subtitle': '把 AI 编码工具指到 xxf-ai-server 的步骤。',
+  'docs.subtitle': '把 AI 编码工具指到 Nexa 的步骤。',
   'docs.claudeCode.h': 'Claude Code',
   'docs.cline.h': 'Cline（VSCode）',
   'docs.cursor.h': 'Cursor',

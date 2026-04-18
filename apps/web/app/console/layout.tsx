@@ -18,6 +18,7 @@ import { apiFetch } from '../../lib/api';
 import { clearBootstrapToken } from '../../lib/auth';
 import { useT } from '../../lib/i18n/context';
 import { LocaleSwitcher } from '../../lib/i18n/LocaleSwitcher';
+import { NexaLogo } from '../../components/NexaLogo';
 import type { DictKey } from '../../lib/i18n/dict';
 
 interface Me {
@@ -71,8 +72,8 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
       <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-background p-4">
         <div className="mb-6 flex items-start justify-between gap-2 px-2">
           <div>
-            <div className="text-sm font-semibold">xxf-ai-server</div>
-            <div className="text-xs text-muted-foreground">{t('console.title')}</div>
+            <NexaLogo size={24} withWordmark />
+            <div className="mt-1 text-xs text-muted-foreground">{t('console.title')}</div>
           </div>
           <LocaleSwitcher />
         </div>

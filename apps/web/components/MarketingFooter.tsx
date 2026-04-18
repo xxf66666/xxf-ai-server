@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useT } from '../lib/i18n/context';
+import { NexaLogo } from './NexaLogo';
 
 export function MarketingFooter() {
   const t = useT();
@@ -10,7 +11,9 @@ export function MarketingFooter() {
     <footer className="border-t border-border bg-muted/20">
       <div className="container mx-auto grid max-w-6xl gap-8 py-10 sm:grid-cols-2 md:grid-cols-4">
         <div>
-          <div className="mb-2 text-sm font-semibold">xxf-ai-server</div>
+          <div className="mb-2">
+            <NexaLogo size={24} withWordmark />
+          </div>
           <p className="text-xs text-muted-foreground">{t('home.tagline')}</p>
         </div>
         <div>
@@ -43,7 +46,7 @@ export function MarketingFooter() {
       </div>
       <div className="border-t border-border py-4">
         <div className="container mx-auto max-w-6xl text-xs text-muted-foreground">
-          © {year} xxf-ai-server · {t('footer.disclaimer')}
+          © {year} Nexa · {t('footer.disclaimer')}
         </div>
       </div>
     </footer>
