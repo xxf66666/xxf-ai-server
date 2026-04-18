@@ -361,6 +361,62 @@ export const en = {
   'wallet.history.col.code': 'Code',
   'wallet.history.col.value': 'Value',
   'wallet.history.col.time': 'Time',
+
+  // --- marketing landing ---
+  'home.hero.tagline': 'The AI gateway for Claude Code, Cline, Cursor',
+  'home.hero.pitch':
+    'Claude Opus, Sonnet, GPT-4o — all at 15% off official list price. Pay-as-you-go via redeem cards. No subscription, no credit card.',
+  'home.hero.primary': 'Start free ($5 credit)',
+  'home.hero.secondary': 'See pricing',
+  'home.hero.eye.caption': 'We watch your budget, not your prompts.',
+  'home.feat.title': 'What you get',
+  'home.feat.cheap.title': '15% off everything',
+  'home.feat.cheap.desc': 'We pool subscriptions so you pay less than the official API. Always.',
+  'home.feat.compat.title': 'Drop-in compatible',
+  'home.feat.compat.desc': 'Same /v1/messages and /v1/chat/completions. Swap one env var, done.',
+  'home.feat.fast.title': 'Streaming-first',
+  'home.feat.fast.desc': 'SSE passthrough with < 100 ms added latency. Workers keep tokens fresh.',
+  'home.feat.transparent.title': 'Transparent billing',
+  'home.feat.transparent.desc':
+    'Per-request cost in micro-USD + token counts + balance history — all visible in your wallet.',
+  'home.models.title': 'Models available',
+  'home.models.sub': 'Eight models across Anthropic + OpenAI. Input and output billed separately.',
+  'home.cta.title': 'Ready to try?',
+  'home.cta.sub': 'Register with an invite code. $5 welcome credit lets you kick the tires.',
+  'home.cta.primary': 'Register',
+  'home.cta.secondary': 'I already have an account',
+
+  // footer
+  'footer.product': 'Product',
+  'footer.legal': 'Legal',
+  'footer.account': 'Account',
+  'footer.terms': 'Terms of Service',
+  'footer.privacy': 'Privacy Policy',
+  'footer.disclaimer':
+    'Independent gateway — not affiliated with Anthropic or OpenAI.',
+
+  // docs index
+  'docs.index.cc.title': 'Claude Code',
+  'docs.index.cc.desc': "Anthropic's first-party CLI. The primary client.",
+  'docs.index.cline.title': 'Cline',
+  'docs.index.cline.desc': 'VSCode extension — Anthropic-mode.',
+  'docs.index.cursor.title': 'Cursor',
+  'docs.index.cursor.desc': 'Cursor editor — OpenAI-compat mode.',
+  'docs.index.api.title': 'Raw API',
+  'docs.index.api.desc': 'curl examples for /v1/messages and /v1/chat/completions.',
+  'docs.read': 'Read',
+
+  // pricing
+  'pricing.savings': 'Save {pct}%',
+  'pricing.pagePlans':
+    'Welcome credit: $5 on signup · Pay-as-you-go via redeem cards',
+  'pricing.input': 'Input',
+  'pricing.output': 'Output',
+
+  // terms & privacy
+  'terms.title': 'Terms of Service',
+  'terms.lastUpdated': 'Last updated: {date}',
+  'privacy.title': 'Privacy Policy',
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -722,4 +778,58 @@ export const zh: Dict = {
   'wallet.history.col.code': '卡密',
   'wallet.history.col.value': '面额',
   'wallet.history.col.time': '时间',
+
+  // --- marketing landing ---
+  'home.hero.tagline': '面向 Claude Code / Cline / Cursor 的 AI 网关',
+  'home.hero.pitch':
+    'Claude Opus / Sonnet、GPT-4o 全线 8.5 折。卡密按量付费，无订阅，无信用卡。',
+  'home.hero.primary': '免费注册（送 $5）',
+  'home.hero.secondary': '看价格',
+  'home.hero.eye.caption': '只盯着你的预算，不看你的 prompt。',
+  'home.feat.title': '为什么选我们',
+  'home.feat.cheap.title': '全线 8.5 折',
+  'home.feat.cheap.desc': '聚合订阅账号，价格永远比官方 API 便宜。',
+  'home.feat.compat.title': '零改动接入',
+  'home.feat.compat.desc': '同样的 /v1/messages 和 /v1/chat/completions 接口。换一个环境变量搞定。',
+  'home.feat.fast.title': '流式优先',
+  'home.feat.fast.desc': 'SSE 透传，额外延迟 < 100ms。后台 worker 保持 token 新鲜。',
+  'home.feat.transparent.title': '透明计费',
+  'home.feat.transparent.desc':
+    '每次请求到 micro-USD 精度、token 数、余额变化 —— 钱包里一目了然。',
+  'home.models.title': '可用模型',
+  'home.models.sub': 'Anthropic + OpenAI 共 8 个模型，输入输出分别计费。',
+  'home.cta.title': '开始使用？',
+  'home.cta.sub': '用邀请码注册，$5 体验额度先试再说。',
+  'home.cta.primary': '立即注册',
+  'home.cta.secondary': '我已经有账号',
+
+  // footer
+  'footer.product': '产品',
+  'footer.legal': '协议',
+  'footer.account': '账号',
+  'footer.terms': '用户协议',
+  'footer.privacy': '隐私协议',
+  'footer.disclaimer': '独立运营的中转网关 —— 非 Anthropic / OpenAI 官方服务。',
+
+  // docs index
+  'docs.index.cc.title': 'Claude Code',
+  'docs.index.cc.desc': 'Anthropic 官方 CLI，本站主推客户端。',
+  'docs.index.cline.title': 'Cline',
+  'docs.index.cline.desc': 'VSCode 插件 —— Anthropic 模式接入。',
+  'docs.index.cursor.title': 'Cursor',
+  'docs.index.cursor.desc': 'Cursor 编辑器 —— OpenAI 兼容模式接入。',
+  'docs.index.api.title': '原生 API',
+  'docs.index.api.desc': '/v1/messages 和 /v1/chat/completions 的 curl 示例。',
+  'docs.read': '阅读',
+
+  // pricing
+  'pricing.savings': '节省 {pct}%',
+  'pricing.pagePlans': '新注册送 $5 · 卡密按量付费',
+  'pricing.input': '输入',
+  'pricing.output': '输出',
+
+  // terms & privacy
+  'terms.title': '用户协议',
+  'terms.lastUpdated': '最后更新：{date}',
+  'privacy.title': '隐私协议',
 };
