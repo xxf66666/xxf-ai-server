@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { and, desc, eq, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, lte, or } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db/client.js';
 import { announcements, type Announcement } from '../../db/schema.js';
@@ -127,7 +127,7 @@ export async function registerAdminAnnouncements(app: FastifyInstance): Promise<
         and(
           eq(announcements.active, true),
           or(isNull(announcements.startsAt), lte(announcements.startsAt, now)),
-          or(isNull(announcements.endsAt), sql`${announcements.endsAt} > ${now}`),
+          or(isNull(announcements.endsAt), gt(announcements.endsAt, now)),
         ),
       )
       .orderBy(desc(announcements.createdAt));
