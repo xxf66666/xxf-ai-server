@@ -417,6 +417,42 @@ export const en = {
   'terms.title': 'Terms of Service',
   'terms.lastUpdated': 'Last updated: {date}',
   'privacy.title': 'Privacy Policy',
+
+  // register validation
+  'register.passwordConfirm': 'Confirm password',
+  'register.err.mismatch': 'Passwords do not match',
+  'register.err.weak': 'Password is too weak — mix letters, digits and symbols',
+  'register.err.agree': 'You must agree to both agreements to continue',
+  'register.agree.terms.pre': 'I have read and agree to the',
+  'register.agree.privacy.pre': 'I have read and agree to the',
+
+  // password strength
+  'pwStrength.hint': 'At least 8 chars; a mix of letters, digits and symbols is strongest.',
+  'pwStrength.none': '',
+  'pwStrength.weak': 'Weak',
+  'pwStrength.fair': 'Fair',
+  'pwStrength.good': 'Good',
+  'pwStrength.strong': 'Strong',
+
+  // settings groups
+  'settings.group.pricing': 'Pricing',
+  'settings.group.pricing.desc': 'Your discount, welcome credit, and CNY rate.',
+  'settings.group.pool': 'Pool scheduling',
+  'settings.group.pool.desc': 'How requests are routed across upstream accounts.',
+  'settings.markupRate': 'Markup rate',
+  'settings.markupRate.desc':
+    'Multiplier applied to official provider price. 0.85 = 15% off; 1.0 = official price.',
+  'settings.welcomeCredit': 'Welcome credit',
+  'settings.welcomeCredit.desc': 'Seeded into each new consumer account.',
+  'settings.usdToCny': 'USD → CNY rate',
+  'settings.usdToCny.desc':
+    'Only used for dual-currency display. Internal ledger stays in USD.',
+
+  // console docs entry
+  'console.onboarding.title': "You're new — here's how to connect Claude Code",
+  'console.onboarding.desc':
+    'Mint an API key, set two env vars, call your first model. 2-minute read.',
+  'console.docs.link': 'Full documentation →',
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -832,4 +868,37 @@ export const zh: Dict = {
   'terms.title': '用户协议',
   'terms.lastUpdated': '最后更新：{date}',
   'privacy.title': '隐私协议',
+
+  // register validation
+  'register.passwordConfirm': '确认密码',
+  'register.err.mismatch': '两次输入的密码不一致',
+  'register.err.weak': '密码太弱 —— 建议混合字母、数字和符号',
+  'register.err.agree': '必须同意两个协议才能继续',
+  'register.agree.terms.pre': '我已阅读并同意',
+  'register.agree.privacy.pre': '我已阅读并同意',
+
+  // password strength
+  'pwStrength.hint': '至少 8 位；混合字母、数字和符号最安全。',
+  'pwStrength.none': '',
+  'pwStrength.weak': '弱',
+  'pwStrength.fair': '一般',
+  'pwStrength.good': '较强',
+  'pwStrength.strong': '很强',
+
+  // settings groups
+  'settings.group.pricing': '计费',
+  'settings.group.pricing.desc': '折扣、欢迎额度、人民币汇率。',
+  'settings.group.pool': '池子调度',
+  'settings.group.pool.desc': '请求如何在上游账号之间路由。',
+  'settings.markupRate': '折扣率',
+  'settings.markupRate.desc': '乘在官方价上。0.85 = 打 8.5 折；1.0 = 官方价。',
+  'settings.welcomeCredit': '欢迎额度',
+  'settings.welcomeCredit.desc': '每个新注册的 consumer 账号会收到这笔额度。',
+  'settings.usdToCny': 'USD → CNY 汇率',
+  'settings.usdToCny.desc': '仅用于双币展示。内部账本只记 USD。',
+
+  // console docs entry
+  'console.onboarding.title': '第一次用？这里教你配置 Claude Code',
+  'console.onboarding.desc': '铸一把 API 密钥，设两个环境变量，发第一个请求。2 分钟读完。',
+  'console.docs.link': '查看完整文档 →',
 };

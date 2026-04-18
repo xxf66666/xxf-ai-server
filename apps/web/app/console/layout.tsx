@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
+  BookOpen,
   Boxes,
+  ExternalLink,
   KeyRound,
   LayoutDashboard,
   ListOrdered,
@@ -85,6 +87,18 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
               <span>{t(label)}</span>
             </Link>
           ))}
+          <div className="pt-2 mt-2 border-t border-border">
+            <a
+              href="/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <BookOpen className="h-4 w-4" />
+              <span>{t('nav.docs')}</span>
+              <ExternalLink className="ml-auto h-3 w-3 opacity-60" />
+            </a>
+          </div>
         </nav>
         <div className="mt-4 space-y-2 border-t border-border pt-4">
           <div className="px-2 text-xs">

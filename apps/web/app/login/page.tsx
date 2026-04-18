@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/api';
 import { setBootstrapToken } from '../../lib/auth';
 import { useT } from '../../lib/i18n/context';
-import { LocaleSwitcher } from '../../lib/i18n/LocaleSwitcher';
+import { AuthShell } from '../../components/AuthShell';
 
 type Mode = 'password' | 'bootstrap';
 
@@ -60,28 +60,20 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="container flex min-h-screen items-center justify-center py-16">
-      <div className="absolute right-4 top-4">
-        <LocaleSwitcher />
-      </div>
-      <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4 rounded-lg border border-border p-6 shadow-sm">
-        <div>
-          <h1 className="text-xl font-semibold">{t('login.title')}</h1>
-          <p className="mt-1 text-xs text-muted-foreground">{t('login.subtitle')}</p>
-        </div>
-
+    <AuthShell title={t('login.title')} subtitle={t('login.subtitle')}>
+      <form onSubmit={onSubmit} className="space-y-4">
         <div className="flex gap-1 rounded-md bg-muted p-1 text-xs">
           <button
             type="button"
             onClick={() => setMode('password')}
-            className={`flex-1 rounded py-1 ${mode === 'password' ? 'bg-background shadow-sm' : ''}`}
+            className={`flex-1 rounded py-1.5 ${mode === 'password' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground'}`}
           >
             {t('login.tab.password')}
           </button>
           <button
             type="button"
             onClick={() => setMode('bootstrap')}
-            className={`flex-1 rounded py-1 ${mode === 'bootstrap' ? 'bg-background shadow-sm' : ''}`}
+            className={`flex-1 rounded py-1.5 ${mode === 'bootstrap' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground'}`}
           >
             {t('login.tab.bootstrap')}
           </button>
@@ -97,7 +89,7 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full rounded-md border border-border bg-background px-3 py-2"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 outline-none ring-primary/30 focus:ring-2"
               />
             </label>
             <label className="block space-y-1 text-sm">
@@ -108,7 +100,7 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="w-full rounded-md border border-border bg-background px-3 py-2"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 outline-none ring-primary/30 focus:ring-2"
               />
             </label>
           </>
@@ -120,7 +112,7 @@ export default function LoginPage() {
               onChange={(e) => setForm({ ...form, token: e.target.value })}
               type="password"
               required
-              className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-xs"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-xs outline-none ring-primary/30 focus:ring-2"
               placeholder="ADMIN_BOOTSTRAP_TOKEN"
             />
             <p className="text-xs text-muted-foreground">{t('login.token.hint')}</p>
@@ -135,7 +127,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+          className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
         >
           {submitting ? t('login.verifying') : t('login.submit')}
         </button>
@@ -149,6 +141,6 @@ export default function LoginPage() {
           </div>
         )}
       </form>
-    </main>
+    </AuthShell>
   );
 }

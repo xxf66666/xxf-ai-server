@@ -37,6 +37,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     apiFetch<Me>('/admin/v1/auth/me')
       .then((data) => {
+        // Consumers don't belong in the admin surface — redirect to
+        // their own console before rendering any admin chrome.
+        if (data.role === 'consumer') {
+          router.replace('/console/dashboard' as never);
+          return;
+        }
         setMe(data);
         setReady(true);
       })

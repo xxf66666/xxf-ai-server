@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Activity, CircleDollarSign, KeyRound, Send, TrendingDown, Wallet, Zap } from 'lucide-react';
+import { Activity, ArrowRight, BookOpen, CircleDollarSign, KeyRound, Send, Terminal, Wallet, Zap } from 'lucide-react';
 import { apiFetch } from '../../../lib/api';
 import { useT } from '../../../lib/i18n/context';
 import type { DictKey } from '../../../lib/i18n/dict';
@@ -83,16 +84,48 @@ export default function ConsoleDashboardPage() {
     },
   ];
 
-  // Suppress unused-import warning in case icon tree-shakes
-  void TrendingDown;
+  const noKeys = overview && overview.activeKeys === 0;
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex items-end justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-semibold tracking-tight">
           👋 {t(greetingKey())}
           {overview?.email ? `，${overview.email}` : ''}
         </h1>
+      </div>
+
+      {/* Onboarding hint for new users (no keys yet) */}
+      {noKeys && (
+        <Link
+          href={'/docs/claude-code' as never}
+          target="_blank"
+          className="block overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-r from-indigo-500/10 via-violet-500/10 to-pink-500/10 p-5 transition-shadow hover:shadow-md"
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Terminal className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <div className="text-sm font-semibold">{t('console.onboarding.title')}</div>
+              <div className="text-xs text-muted-foreground">{t('console.onboarding.desc')}</div>
+            </div>
+            <ArrowRight className="h-5 w-5 text-primary" />
+          </div>
+        </Link>
+      )}
+
+      {/* Persistent link to full docs */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <BookOpen className="h-3.5 w-3.5" />
+        <a
+          href="/docs"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-foreground hover:underline"
+        >
+          {t('console.docs.link')}
+        </a>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
