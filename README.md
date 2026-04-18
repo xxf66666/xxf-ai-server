@@ -197,8 +197,13 @@ pnpm --filter @xxf/server admin:create \
 ## 联系 / 支持
 
 - 📮 邮箱: **xixiyeyu@gmail.com**
-- 💬 微信: 二维码在 [claude.xxflk.cn](https://claude.xxflk.cn) 页脚，登录后
-  `/console/dashboard` 右下方也有
+- 💬 微信:
+
+<p align="left">
+  <img src="apps/web/public/relation/wechat.jpg" width="220" alt="WeChat QR" />
+</p>
+
+<sub>线上入口：[claude.xxflk.cn](https://claude.xxflk.cn) 页脚，登录后 `/console/dashboard` 右下方也有。</sub>
 
 ## 合规声明
 
