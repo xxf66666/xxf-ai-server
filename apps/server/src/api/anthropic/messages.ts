@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { env } from '../../config/env.js';
 import { requireApiKey } from '../../core/users/auth.js';
+import { keyAllowsModel } from '../../core/users/keys.js';
 import { pickAccount } from '../../core/accounts/pool.js';
 import { relayMessages } from '../../core/relay/anthropic.js';
 
@@ -44,6 +45,15 @@ export async function registerAnthropic(app: FastifyInstance): Promise<void> {
           .send({ type: 'error', error: { type: 'invalid_request_error', message: parsed.error.message } });
       }
       const apiKey = req.apiKey!;
+      if (!keyAllowsModel(apiKey, parsed.data.model)) {
+        return reply.code(403).send({
+          type: 'error',
+          error: {
+            type: 'permission_error',
+            message: `this api key is not allowed to call model ${parsed.data.model}`,
+          },
+        });
+      }
       const account = await pickAccount({
         provider: 'claude',
         ownerUserId: apiKey.userId,

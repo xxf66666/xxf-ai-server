@@ -5,6 +5,7 @@ import { db } from '../../db/client.js';
 import { users } from '../../db/schema.js';
 import { hashPassword, verifyPassword } from '../../core/users/passwords.js';
 import { isStrongEnough } from '../../core/users/strength.js';
+import { verifyTotp } from '../../core/users/totp.js';
 import { record } from '../../core/audit/log.js';
 import { consumeInvite } from '../../core/invites/index.js';
 import { seedWelcomeCredit } from '../../core/users/ledger.js';
@@ -22,6 +23,10 @@ import { logger } from '../../utils/logger.js';
 const LoginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+  // If the user has TOTP enabled, the client sends the 6-digit code on
+  // the same request. We respond `totp_required` on first attempt to
+  // signal the UI to prompt.
+  totp: z.string().min(6).max(10).optional(),
 });
 
 const RegisterSchema = z.object({
@@ -123,6 +128,40 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
         type: 'error',
         error: { type: 'authentication_error', message: 'invalid email or password' },
       });
+    }
+
+    // 2FA gate. If the user has TOTP enabled:
+    //   - no code supplied → respond totp_required (client shows input)
+    //   - code supplied but invalid → 401 with totp_invalid
+    // We run this BEFORE the status gate so that a pending/suspended
+    // user without TOTP can't bypass checks by not sending a code.
+    if (user.totpEnabled) {
+      if (!parsed.data.totp) {
+        return reply.code(401).send({
+          type: 'error',
+          error: { type: 'totp_required', message: 'two-factor code required' },
+        });
+      }
+      if (!user.totpSecret || !verifyTotp(user.totpSecret, parsed.data.totp)) {
+        // Still increments failure counter — TOTP brute force on a
+        // known password is just as dangerous as password brute force.
+        const nextCount = user.failedLoginCount + 1;
+        const shouldLock = nextCount >= 5;
+        const LOCK_MS = 15 * 60 * 1000;
+        await db
+          .update(users)
+          .set({
+            failedLoginCount: nextCount,
+            lockedUntil: shouldLock ? new Date(Date.now() + LOCK_MS) : user.lockedUntil,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, user.id))
+          .catch(() => {});
+        return reply.code(401).send({
+          type: 'error',
+          error: { type: 'totp_invalid', message: 'invalid two-factor code' },
+        });
+      }
     }
 
     // Hard gate: only active users may log in. Pending / suspended get

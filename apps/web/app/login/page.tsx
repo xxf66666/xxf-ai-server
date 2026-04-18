@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { AlertCircle, MailWarning } from 'lucide-react';
+import { AlertCircle, KeyRound, MailWarning } from 'lucide-react';
 import { ApiError, apiFetch } from '../../lib/api';
 import { setBootstrapToken } from '../../lib/auth';
 import { useT } from '../../lib/i18n/context';
@@ -29,12 +29,13 @@ export default function LoginPage() {
   const router = useRouter();
   const t = useT();
   const [mode, setMode] = useState<Mode>('password');
-  const [form, setForm] = useState({ email: '', password: '', token: '' });
+  const [form, setForm] = useState({ email: '', password: '', token: '', totp: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<{ email: string } | null>(null);
   const [suspended, setSuspended] = useState(false);
   const [lockedFor, setLockedFor] = useState<number | null>(null);
+  const [totpRequired, setTotpRequired] = useState(false);
   const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
 
   useEffect(() => {
@@ -53,9 +54,11 @@ export default function LoginPage() {
     try {
       let role: Me['role'] = 'consumer';
       if (mode === 'password') {
+        const body: Record<string, string> = { email: form.email, password: form.password };
+        if (form.totp) body.totp = form.totp;
         const res = await apiFetch<{ role: Me['role'] }>('/admin/v1/auth/login', {
           method: 'POST',
-          body: JSON.stringify({ email: form.email, password: form.password }),
+          body: JSON.stringify(body),
         });
         role = res.role;
       } else {
@@ -79,6 +82,16 @@ export default function LoginPage() {
         }
         if (etype === 'account_locked') {
           setLockedFor(body?.error?.retryAfterSec ?? 900);
+          return;
+        }
+        if (etype === 'totp_required') {
+          setTotpRequired(true);
+          return;
+        }
+        if (etype === 'totp_invalid') {
+          setTotpRequired(true);
+          setError(t('login.totp.invalid'));
+          setForm((f) => ({ ...f, totp: '' }));
           return;
         }
       }
@@ -159,6 +172,27 @@ export default function LoginPage() {
               placeholder="ADMIN_BOOTSTRAP_TOKEN"
             />
             <p className="text-xs text-muted-foreground">{t('login.token.hint')}</p>
+          </label>
+        )}
+
+        {mode === 'password' && totpRequired && (
+          <label className="block space-y-1 text-sm">
+            <span className="flex items-center gap-1.5 text-xs font-medium">
+              <KeyRound className="h-3.5 w-3.5" />
+              {t('login.totp.label')}
+            </span>
+            <input
+              value={form.totp}
+              onChange={(e) => setForm({ ...form, totp: e.target.value.replace(/\s+/g, '') })}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]*"
+              maxLength={10}
+              autoFocus
+              placeholder="123456"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono tracking-widest outline-none ring-primary/30 focus:ring-2"
+            />
+            <p className="text-[11px] text-muted-foreground">{t('login.totp.hint')}</p>
           </label>
         )}
 

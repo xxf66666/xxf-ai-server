@@ -1,6 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { Download } from 'lucide-react';
 import { apiFetch } from '../../../lib/api';
 import { useT } from '../../../lib/i18n/context';
 
@@ -36,17 +38,65 @@ function statusClass(s: number): string {
 
 export default function ConsoleUsagePage() {
   const t = useT();
+  const [exportDays, setExportDays] = useState(30);
+  const [exporting, setExporting] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ['console', 'usage'],
     queryFn: () => apiFetch<{ data: UsageRow[] }>('/v1/console/usage?limit=50'),
     refetchInterval: 15_000,
   });
 
+  const onExport = async () => {
+    setExporting(true);
+    try {
+      // Use fetch directly so we get the raw CSV bytes; apiFetch assumes
+      // JSON. credentials:include carries the JWT cookie.
+      const res = await fetch(`/v1/console/usage.csv?days=${exportDays}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nexa-usage-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t('console.usage.title')}</h1>
-        <p className="text-sm text-muted-foreground">{t('console.usage.subtitle')}</p>
+      <div className="flex items-end justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{t('console.usage.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('console.usage.subtitle')}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={exportDays}
+            onChange={(e) => setExportDays(Number(e.target.value))}
+            className="rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+            aria-label={t('console.usage.export.rangeLabel')}
+          >
+            <option value={7}>{t('console.usage.export.days7')}</option>
+            <option value={30}>{t('console.usage.export.days30')}</option>
+            <option value={90}>{t('console.usage.export.days90')}</option>
+          </select>
+          <button
+            type="button"
+            onClick={onExport}
+            disabled={exporting}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-60"
+          >
+            <Download className="h-3.5 w-3.5" />
+            {exporting ? t('console.usage.export.busy') : t('console.usage.export.cta')}
+          </button>
+        </div>
       </div>
 
       <div className="rounded-lg border border-border bg-background">

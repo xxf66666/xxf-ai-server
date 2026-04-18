@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Activity, ArrowRight, BookOpen, CircleDollarSign, KeyRound, Mail, Send, Terminal, Wallet, Zap } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, BookOpen, CircleDollarSign, KeyRound, Mail, Send, Siren, Terminal, Wallet, Zap } from 'lucide-react';
 import { apiFetch } from '../../../lib/api';
 import { useT } from '../../../lib/i18n/context';
 import type { DictKey } from '../../../lib/i18n/dict';
@@ -20,6 +20,11 @@ interface Overview {
   spentMud: number;
   emailVerified: boolean;
   timeseries: Array<{ ts: string; tokens: number; requests: number }>;
+  alerts: Array<{
+    kind: 'balance_depleted' | 'balance_low' | 'key_quota_high';
+    level: 'warning' | 'critical';
+    detail?: { keyId?: string; usedPct?: number };
+  }>;
 }
 
 const fmt = new Intl.NumberFormat();
@@ -105,6 +110,41 @@ export default function ConsoleDashboardPage() {
           {overview?.email ? `，${overview.email}` : ''}
         </h1>
       </div>
+
+      {(overview?.alerts ?? []).map((a, i) => {
+        const critical = a.level === 'critical';
+        const cls = critical
+          ? 'border-red-300 bg-red-50 text-red-900'
+          : 'border-amber-300 bg-amber-50 text-amber-900';
+        const Icon = critical ? Siren : AlertTriangle;
+        let msg = '';
+        if (a.kind === 'balance_depleted') msg = t('console.alerts.balanceDepleted');
+        else if (a.kind === 'balance_low') msg = t('console.alerts.balanceLow');
+        else if (a.kind === 'key_quota_high') {
+          const pct = a.detail?.usedPct ?? 80;
+          msg = t(critical ? 'console.alerts.keyQuotaFull' : 'console.alerts.keyQuotaHigh').replace(
+            '{pct}',
+            String(pct),
+          );
+        }
+        return (
+          <div
+            key={`${a.kind}-${i}`}
+            className={`flex items-start gap-3 rounded-lg border px-4 py-3 text-sm ${cls}`}
+          >
+            <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="flex-1">{msg}</div>
+            {(a.kind === 'balance_depleted' || a.kind === 'balance_low') && (
+              <Link
+                href={'/console/wallet' as never}
+                className="rounded-md border border-current/30 bg-background/60 px-2 py-1 text-xs font-medium hover:bg-background"
+              >
+                {t('console.alerts.topup')}
+              </Link>
+            )}
+          </div>
+        );
+      })}
 
       {unverified && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">

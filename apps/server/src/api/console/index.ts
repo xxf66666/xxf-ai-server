@@ -15,6 +15,7 @@ import {
 import { consumeRedeemCode, listMyRedeemed } from '../../core/redeem/index.js';
 import { hashPassword, verifyPassword } from '../../core/users/passwords.js';
 import { isStrongEnough } from '../../core/users/strength.js';
+import { generateTotpSecret, totpUri, verifyTotp } from '../../core/users/totp.js';
 import { getAllSettings } from '../../core/settings/index.js';
 import { record } from '../../core/audit/log.js';
 import { requireAdmin } from '../../middleware/admin-auth.js';
@@ -30,6 +31,7 @@ const DEFAULT_MODELS = [
 
 const MintSchema = z.object({
   name: z.string().min(1).max(120),
+  allowedModels: z.array(z.string().min(1).max(120)).nullable().optional(),
 });
 
 const PasswordSchema = z.object({
@@ -45,6 +47,14 @@ function sessionUser(req: Parameters<typeof requireAdmin>[0]): string | null {
   const sub = req.adminSession?.sub;
   if (!sub || sub === 'bootstrap') return null;
   return sub;
+}
+
+// RFC 4180 CSV escape: wrap in quotes if the value contains comma, quote,
+// or newline; inner double-quotes are doubled.
+function csvCell(v: string | number): string {
+  const s = String(v);
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
 }
 
 export async function registerConsole(app: FastifyInstance): Promise<void> {
@@ -63,7 +73,12 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const myKeys = await db
-      .select({ id: apiKeys.id, used: apiKeys.usedMonthlyTokens, status: apiKeys.status })
+      .select({
+        id: apiKeys.id,
+        used: apiKeys.usedMonthlyTokens,
+        quotaMonthlyTokens: apiKeys.quotaMonthlyTokens,
+        status: apiKeys.status,
+      })
       .from(apiKeys)
       .where(eq(apiKeys.userId, uid));
     const activeKeys = myKeys.filter((k) => k.status === 'active').length;
@@ -122,10 +137,48 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
         balanceMud: users.balanceMud,
         spentMud: users.spentMud,
         emailVerified: users.emailVerified,
+        totpEnabled: users.totpEnabled,
       })
       .from(users)
       .where(eq(users.id, uid))
       .limit(1);
+
+    // Derived UI alerts. Surfaced on dashboard as coloured banners so
+    // the user sees "balance low" / "key near quota" without having to
+    // hunt for it in the numbers.
+    const balanceMud = Number(meRow?.balanceMud ?? 0);
+    const spentMud = Number(meRow?.spentMud ?? 0);
+    const alerts: Array<{
+      kind: 'balance_depleted' | 'balance_low' | 'key_quota_high';
+      level: 'warning' | 'critical';
+      detail?: { keyId?: string; usedPct?: number };
+    }> = [];
+    // Only consumers are billed on balance — admins / contributors
+    // bypass the balance gate on the relay.
+    const isConsumer = req.adminSession?.role === 'consumer';
+    if (isConsumer) {
+      if (balanceMud <= 0) {
+        alerts.push({ kind: 'balance_depleted', level: 'critical' });
+      } else if (balanceMud < 1_000_000) {
+        // < $1 → warn.
+        alerts.push({ kind: 'balance_low', level: 'warning' });
+      }
+    }
+    for (const k of myKeys) {
+      const q = Number((k as { quotaMonthlyTokens?: unknown }).quotaMonthlyTokens ?? 0);
+      if (q > 0) {
+        const used = Number(k.used ?? 0);
+        const pct = used / q;
+        if (pct >= 0.8) {
+          alerts.push({
+            kind: 'key_quota_high',
+            level: pct >= 1 ? 'critical' : 'warning',
+            detail: { keyId: k.id, usedPct: Math.round(pct * 100) },
+          });
+        }
+      }
+    }
+
     return {
       email: req.adminSession?.email ?? '',
       role: req.adminSession?.role ?? 'consumer',
@@ -133,10 +186,12 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
       tokens24h,
       requests24h,
       usedMonthly,
-      balanceMud: Number(meRow?.balanceMud ?? 0),
-      spentMud: Number(meRow?.spentMud ?? 0),
+      balanceMud,
+      spentMud,
       emailVerified: Boolean(meRow?.emailVerified),
+      totpEnabled: Boolean(meRow?.totpEnabled),
       timeseries,
+      alerts,
     };
   });
 
@@ -152,6 +207,7 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
         status: k.status,
         quotaMonthlyTokens: k.quotaMonthlyTokens,
         usedMonthlyTokens: k.usedMonthlyTokens,
+        allowedModels: k.allowedModels ?? null,
         expiresAt: k.expiresAt?.toISOString() ?? null,
         lastUsedAt: k.lastUsedAt?.toISOString() ?? null,
         createdAt: k.createdAt.toISOString(),
@@ -169,7 +225,11 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
         error: { type: 'invalid_request_error', message: parsed.error.message },
       });
     }
-    const result = await mintApiKey({ userId: uid, name: parsed.data.name });
+    const result = await mintApiKey({
+      userId: uid,
+      name: parsed.data.name,
+      allowedModels: parsed.data.allowedModels ?? null,
+    });
     await record(req, {
       action: 'key.mint',
       entityType: 'api_key',
@@ -238,6 +298,72 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
         keyName: r.keyName,
       })),
     };
+  });
+
+  // CSV export of this user's usage_log. Hard-capped at 5000 rows so a
+  // malicious client can't ask for the whole table. Query param `days`
+  // (default 30, max 90) scopes the time window.
+  app.get('/v1/console/usage.csv', async (req, reply) => {
+    const uid = sessionUser(req);
+    if (!uid) return reply.code(401).send({ error: 'unauth' });
+    const q = (req.query ?? {}) as { days?: string };
+    const days = Math.min(90, Math.max(1, Number(q.days ?? 30)));
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const rows = await db
+      .select({
+        createdAt: usageLog.createdAt,
+        provider: usageLog.provider,
+        model: usageLog.model,
+        inputTokens: usageLog.inputTokens,
+        outputTokens: usageLog.outputTokens,
+        latencyMs: usageLog.latencyMs,
+        status: usageLog.status,
+        errorCode: usageLog.errorCode,
+        costMud: usageLog.costMud,
+        keyName: apiKeys.name,
+      })
+      .from(usageLog)
+      .innerJoin(apiKeys, eq(usageLog.apiKeyId, apiKeys.id))
+      .where(and(eq(apiKeys.userId, uid), gte(usageLog.createdAt, since)))
+      .orderBy(desc(usageLog.createdAt))
+      .limit(5000);
+
+    // Manual CSV serialization — no streaming library needed at this
+    // row count. Escape double-quotes by doubling them (RFC 4180).
+    const header = [
+      'timestamp_utc',
+      'provider',
+      'model',
+      'key_name',
+      'input_tokens',
+      'output_tokens',
+      'latency_ms',
+      'http_status',
+      'error_code',
+      'cost_usd',
+    ].join(',');
+    const lines = rows.map((r) => {
+      const cost = Number(r.costMud ?? 0) / 1_000_000;
+      const fields: Array<string | number> = [
+        r.createdAt.toISOString(),
+        r.provider,
+        r.model,
+        r.keyName ?? '',
+        r.inputTokens,
+        r.outputTokens,
+        r.latencyMs,
+        r.status,
+        r.errorCode ?? '',
+        cost.toFixed(6),
+      ];
+      return fields.map(csvCell).join(',');
+    });
+    const body = [header, ...lines].join('\n') + '\n';
+    const filename = `nexa-usage-${new Date().toISOString().slice(0, 10)}.csv`;
+    return reply
+      .header('Content-Type', 'text/csv; charset=utf-8')
+      .header('Content-Disposition', `attachment; filename="${filename}"`)
+      .send(body);
   });
 
   app.get('/v1/console/breakdown', async (req, reply) => {
@@ -386,6 +512,127 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
         redeemedAt: r.redeemedAt?.toISOString() ?? null,
       })),
     };
+  });
+
+  // 2FA enrollment. Step 1: user POSTs, server generates a fresh secret,
+  // stores it sealed (but totp_enabled stays false until confirm), and
+  // returns the otpauth URI so the client can render a QR. Subsequent
+  // enroll calls replace the pending secret — a partial enrollment
+  // can't lock anyone out.
+  app.post('/v1/console/me/totp/enroll', async (req, reply) => {
+    const uid = sessionUser(req);
+    if (!uid) return reply.code(401).send({ error: 'unauth' });
+    const [me] = await db.select().from(users).where(eq(users.id, uid)).limit(1);
+    if (!me) return reply.code(404).send({ error: 'not_found' });
+    if (me.totpEnabled) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'totp already enabled' },
+      });
+    }
+    const { base32, storedValue } = generateTotpSecret();
+    await db.update(users).set({ totpSecret: storedValue }).where(eq(users.id, uid));
+    return { uri: totpUri(me.email, base32), secret: base32 };
+  });
+
+  // 2FA enrollment. Step 2: user sends the 6-digit code they see in
+  // their authenticator. On success we flip totpEnabled → true; from
+  // the next login onwards, the user will be prompted for a code.
+  app.post('/v1/console/me/totp/confirm', async (req, reply) => {
+    const uid = sessionUser(req);
+    if (!uid) return reply.code(401).send({ error: 'unauth' });
+    const parsed = z
+      .object({ code: z.string().min(6).max(10) })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'code required' },
+      });
+    }
+    const [me] = await db.select().from(users).where(eq(users.id, uid)).limit(1);
+    if (!me || !me.totpSecret) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'enroll first' },
+      });
+    }
+    if (!verifyTotp(me.totpSecret, parsed.data.code)) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'invalid code' },
+      });
+    }
+    await db.update(users).set({ totpEnabled: true }).where(eq(users.id, uid));
+    await record(req, { action: 'user.totp_enabled', entityType: 'user', entityId: uid });
+    return { ok: true };
+  });
+
+  // Turn 2FA off — requires the user's current password so an attacker
+  // who steals the JWT alone can't disable it.
+  app.post('/v1/console/me/totp/disable', async (req, reply) => {
+    const uid = sessionUser(req);
+    if (!uid) return reply.code(401).send({ error: 'unauth' });
+    const parsed = z
+      .object({ password: z.string().min(1) })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'password required' },
+      });
+    }
+    const [me] = await db.select().from(users).where(eq(users.id, uid)).limit(1);
+    if (!me) return reply.code(404).send({ error: 'not_found' });
+    if (!(await verifyPassword(me.passwordHash, parsed.data.password))) {
+      return reply.code(401).send({
+        type: 'error',
+        error: { type: 'authentication_error', message: 'current password incorrect' },
+      });
+    }
+    await db
+      .update(users)
+      .set({ totpEnabled: false, totpSecret: null })
+      .where(eq(users.id, uid));
+    await record(req, { action: 'user.totp_disabled', entityType: 'user', entityId: uid });
+    return { ok: true };
+  });
+
+  // Revoke all other sessions — bumps password_changed_at so every
+  // existing JWT becomes invalid on next request. Reuses the same
+  // mechanism the password change flow uses.
+  app.post('/v1/console/me/sessions/revoke-others', async (req, reply) => {
+    const uid = sessionUser(req);
+    if (!uid) return reply.code(401).send({ error: 'unauth' });
+    await db
+      .update(users)
+      .set({ passwordChangedAt: new Date(), updatedAt: new Date() })
+      .where(eq(users.id, uid));
+    await record(req, {
+      action: 'user.sessions_revoked',
+      entityType: 'user',
+      entityId: uid,
+      detail: { via: 'self' },
+    });
+    // Current cookie was signed BEFORE the new password_changed_at; to
+    // keep the caller logged in, issue a fresh JWT now. We can reuse
+    // reply.jwtSign because @fastify/jwt is registered on the app.
+    const fresh = await reply.jwtSign(
+      {
+        sub: uid,
+        email: req.adminSession?.email ?? '',
+        role: req.adminSession?.role ?? 'consumer',
+      },
+      { expiresIn: '7d' },
+    );
+    reply.setCookie('xxf_admin_session', fresh, {
+      path: '/',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60,
+    });
+    return { ok: true };
   });
 
   app.patch('/v1/console/me/password', async (req, reply) => {

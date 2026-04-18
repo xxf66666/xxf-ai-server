@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { BarChart3, Boxes, CreditCard, FileSearch, KeyRound, LayoutDashboard, LogOut, Network, Settings, Ticket, Users } from 'lucide-react';
+import { BarChart3, Boxes, CreditCard, FileSearch, KeyRound, LayoutDashboard, LogOut, Megaphone, Network, Settings, Ticket, Users } from 'lucide-react';
 import { apiFetch } from '../../lib/api';
 import { clearBootstrapToken } from '../../lib/auth';
 import { useT } from '../../lib/i18n/context';
 import { LocaleSwitcher } from '../../lib/i18n/LocaleSwitcher';
 import type { DictKey } from '../../lib/i18n/dict';
 import { NexaLogo } from '../../components/NexaLogo';
+import { AnnouncementBanner } from '../../components/AnnouncementBanner';
 
 interface Me {
   sub: string;
@@ -26,6 +27,7 @@ const nav: Array<{ href: string; label: DictKey; icon: typeof LayoutDashboard }>
   { href: '/redeem-codes', label: 'nav.redeemCodes', icon: CreditCard },
   { href: '/proxies', label: 'nav.proxies', icon: Network },
   { href: '/stats', label: 'nav.stats', icon: BarChart3 },
+  { href: '/announcements', label: 'nav.announcements', icon: Megaphone },
   { href: '/audit', label: 'nav.audit', icon: FileSearch },
   { href: '/settings', label: 'nav.settings', icon: Settings },
 ];
@@ -105,7 +107,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
       <main className="flex-1 overflow-y-auto">
-        <div className="container max-w-6xl py-8">{children}</div>
+        <div className="container max-w-6xl space-y-4 py-8">
+          <AnnouncementBanner />
+          {children}
+        </div>
       </main>
     </div>
   );

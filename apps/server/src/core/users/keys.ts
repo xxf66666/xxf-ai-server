@@ -19,6 +19,7 @@ export interface MintInput {
   name: string;
   quotaMonthlyTokens?: number | null;
   expiresAt?: Date | null;
+  allowedModels?: string[] | null;
 }
 
 export interface MintResult {
@@ -42,6 +43,7 @@ export async function mintApiKey(input: MintInput): Promise<MintResult> {
       keyPreview,
       quotaMonthlyTokens: input.quotaMonthlyTokens ?? null,
       expiresAt: input.expiresAt ?? null,
+      allowedModels: input.allowedModels ?? null,
     })
     .returning();
   if (!row) throw new Error('failed to insert api_key');
@@ -65,4 +67,14 @@ export async function listApiKeys(userId: string): Promise<ApiKey[]> {
 
 export async function revokeApiKey(id: string): Promise<void> {
   await db.update(apiKeys).set({ status: 'revoked' }).where(eq(apiKeys.id, id));
+}
+
+/**
+ * Returns true if the key is allowed to use the given model. `null` /
+ * empty allowedModels means unrestricted (the historical default).
+ */
+export function keyAllowsModel(key: ApiKey, model: string): boolean {
+  const allow = key.allowedModels;
+  if (!allow || allow.length === 0) return true;
+  return allow.includes(model);
 }

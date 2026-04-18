@@ -59,6 +59,9 @@ importers:
       nodemailer:
         specifier: ^6.9.16
         version: 6.10.1
+      otpauth:
+        specifier: ^9.5.0
+        version: 9.5.0
       pino:
         specifier: ^9.5.0
         version: 9.14.0
@@ -836,6 +839,10 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
+
+  '@noble/hashes@2.0.1':
+    resolution: {integrity: sha512-XlOlEbQcE9fmuXxrVTXCTlG2nlRXa9Rj3rr5Ue/+tX+nmkgbX720YHh0VR3hBF9xDvwnb8D2shVGOwNx+ulArw==}
+    engines: {node: '>= 20.19.0'}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -1851,6 +1858,9 @@ packages:
   once@1.4.0:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
 
+  otpauth@9.5.0:
+    resolution: {integrity: sha512-Ldhc6UYl4baR5toGr8nfKC+L/b8/RgHKoIixAebgoNGzUUCET02g04rMEZ2ZsPfeVQhMHcuaOgb28nwMr81zCA==}
+
   path-key@3.1.1:
     resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
     engines: {node: '>=8'}
@@ -2834,6 +2844,8 @@ snapshots:
   '@next/swc-win32-x64-msvc@15.1.0':
     optional: true
 
+  '@noble/hashes@2.0.1': {}
+
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
       '@nodelib/fs.stat': 2.0.5
@@ -3735,6 +3747,10 @@ snapshots:
   once@1.4.0:
     dependencies:
       wrappy: 1.0.2
+
+  otpauth@9.5.0:
+    dependencies:
+      '@noble/hashes': 2.0.1
 
   path-key@3.1.1: {}
 

@@ -33,6 +33,7 @@ export const en = {
   'nav.keys': 'API keys',
   'nav.proxies': 'Proxies',
   'nav.stats': 'Stats',
+  'nav.announcements': 'Announcements',
   'nav.audit': 'Audit log',
   'nav.settings': 'Settings',
   'nav.signout': 'Sign out',
@@ -134,6 +135,13 @@ export const en = {
   'keys.col.key': 'Key',
   'keys.col.status': 'Status',
   'keys.col.used': 'Used',
+  'keys.col.allowedModels': 'Allowed models',
+  'keys.col.allowedModels.all': 'all',
+  'keys.form.allowedModels': 'Restrict to these models (optional)',
+  'keys.form.allowedModels.hint':
+    'Click to toggle. Empty selection = no restriction (can call any model).',
+  'keys.form.allowedModels.all': 'any model allowed',
+  'keys.form.allowedModels.n': '{n} selected',
   'keys.confirm.revoke': 'Revoke {name}?',
 
   // --- proxies ---
@@ -231,6 +239,12 @@ export const en = {
   'console.usage.col.latency': 'Latency',
   'console.usage.col.status': 'Status',
   'console.usage.empty': 'No requests yet.',
+  'console.usage.export.cta': 'Export CSV',
+  'console.usage.export.busy': 'exporting…',
+  'console.usage.export.rangeLabel': 'Date range',
+  'console.usage.export.days7': 'Last 7 days',
+  'console.usage.export.days30': 'Last 30 days',
+  'console.usage.export.days90': 'Last 90 days',
 
   'console.settings.title': 'Settings',
   'console.settings.subtitle': 'Update your account credentials.',
@@ -241,6 +255,29 @@ export const en = {
   'console.settings.changePw': 'Change password',
   'console.settings.changing': 'changing…',
   'console.settings.pwChanged': 'password updated ✓',
+  'console.settings.totp.title': 'Two-factor authentication',
+  'console.settings.totp.on':
+    'Enabled — you\'ll be asked for a 6-digit code on every sign-in.',
+  'console.settings.totp.off': 'Not enabled — add a code to sign-in for better security.',
+  'console.settings.totp.enable': 'Enable 2FA',
+  'console.settings.totp.disable': 'Disable',
+  'console.settings.totp.step1':
+    'Step 1. Paste this URL into Google Authenticator / 1Password / Authy:',
+  'console.settings.totp.manualSecret': 'Or add the secret manually:',
+  'console.settings.totp.step2': 'Step 2. Enter the 6-digit code your app shows:',
+  'console.settings.totp.confirm': 'Confirm',
+  'console.settings.totp.active': '2FA is active on your account.',
+  'console.settings.totp.confirmPw': 'Current password',
+  'console.settings.totp.confirmDisable':
+    'Turn off two-factor? Anyone with your password alone will be able to sign in.',
+
+  'console.settings.sessions.title': 'Active sessions',
+  'console.settings.sessions.desc':
+    'Sign out every other device / browser where you\'re currently logged in. This one stays signed in.',
+  'console.settings.sessions.cta': 'Revoke other sessions',
+  'console.settings.sessions.confirm':
+    'Sign out all other browsers? They\'ll need to log in again.',
+  'console.settings.sessions.done': 'Done ✓',
 
   // --- console charts ---
   'console.charts.title': 'Analytics',
@@ -480,6 +517,17 @@ export const en = {
     'Only used for dual-currency display. Internal ledger stays in USD.',
 
   // console docs entry
+  // dashboard alerts
+  'console.alerts.balanceDepleted':
+    'Your balance is $0 — API calls are blocked until you top up.',
+  'console.alerts.balanceLow':
+    'Your balance is below $1. Top up soon to avoid interruptions.',
+  'console.alerts.keyQuotaHigh':
+    'One of your keys has used {pct}% of its monthly token quota.',
+  'console.alerts.keyQuotaFull':
+    'One of your keys has hit its monthly token quota and is blocked until next month.',
+  'console.alerts.topup': 'Top up',
+
   'console.onboarding.title': "You're new — here's how to connect Claude Code",
   'console.onboarding.desc':
     'Mint an API key, set two env vars, call your first model. 2-minute read.',
@@ -532,6 +580,9 @@ export const en = {
   'login.locked.desc':
     'Sign-in is temporarily blocked. Try again in about {minutes} minute(s), or reset your password.',
   'login.forgot': 'Forgot your password?',
+  'login.totp.label': 'Two-factor code',
+  'login.totp.hint': '6-digit code from your authenticator app.',
+  'login.totp.invalid': 'Invalid two-factor code. Try the next rotation.',
 
   // forgot password
   'forgot.title': 'Reset your password',
@@ -574,6 +625,26 @@ export const en = {
   'audit.col.entity': 'Entity',
   'audit.col.detail': 'Detail',
   'audit.empty': 'No events match the current filters.',
+
+  // announcements
+  'announcements.title': 'Announcements',
+  'announcements.subtitle': 'Banner messages shown at the top of every console + admin page.',
+  'announcements.form.title': 'Title',
+  'announcements.form.title.placeholder': 'e.g. Scheduled maintenance tonight',
+  'announcements.form.body': 'Body',
+  'announcements.form.body.placeholder':
+    'Short explanation — this will appear below the title in the banner.',
+  'announcements.form.severity': 'Severity',
+  'announcements.form.active': 'Publish immediately',
+  'announcements.form.publish': 'Publish',
+  'announcements.severity.info': 'Info',
+  'announcements.severity.warning': 'Warning',
+  'announcements.severity.critical': 'Critical',
+  'announcements.inactive': 'inactive',
+  'announcements.action.activate': 'Activate',
+  'announcements.action.deactivate': 'Deactivate',
+  'announcements.confirm.delete': 'Delete this announcement? It stops appearing immediately.',
+  'announcements.empty': 'No announcements yet.',
 
   // contact
   'contact.title': 'Need help?',
@@ -619,6 +690,7 @@ export const zh: Dict = {
   'nav.keys': 'API 密钥',
   'nav.proxies': '出口代理',
   'nav.stats': '统计',
+  'nav.announcements': '公告',
   'nav.audit': '审计日志',
   'nav.settings': '设置',
   'nav.signout': '退出',
@@ -719,6 +791,12 @@ export const zh: Dict = {
   'keys.col.key': '密钥',
   'keys.col.status': '状态',
   'keys.col.used': '已用',
+  'keys.col.allowedModels': '可用模型',
+  'keys.col.allowedModels.all': '全部',
+  'keys.form.allowedModels': '限定模型（可选）',
+  'keys.form.allowedModels.hint': '点击切换。不选任何模型 = 无限制（可以调任何模型）。',
+  'keys.form.allowedModels.all': '无限制',
+  'keys.form.allowedModels.n': '已选 {n} 个',
   'keys.confirm.revoke': '撤销 {name}？',
 
   // --- proxies ---
@@ -812,6 +890,12 @@ export const zh: Dict = {
   'console.usage.col.latency': '耗时',
   'console.usage.col.status': '状态',
   'console.usage.empty': '还没请求记录。',
+  'console.usage.export.cta': '导出 CSV',
+  'console.usage.export.busy': '导出中…',
+  'console.usage.export.rangeLabel': '日期范围',
+  'console.usage.export.days7': '最近 7 天',
+  'console.usage.export.days30': '最近 30 天',
+  'console.usage.export.days90': '最近 90 天',
 
   'console.settings.title': '个人设置',
   'console.settings.subtitle': '修改账号凭据。',
@@ -822,6 +906,24 @@ export const zh: Dict = {
   'console.settings.changePw': '修改密码',
   'console.settings.changing': '修改中…',
   'console.settings.pwChanged': '密码已更新 ✓',
+  'console.settings.totp.title': '两步验证（2FA）',
+  'console.settings.totp.on': '已启用 —— 每次登录都会要求输入 6 位验证码。',
+  'console.settings.totp.off': '未启用 —— 建议开启，即使密码泄露也能多一道防线。',
+  'console.settings.totp.enable': '启用 2FA',
+  'console.settings.totp.disable': '关闭',
+  'console.settings.totp.step1': '第 1 步：把下面链接粘贴到 Google Authenticator / 1Password / Authy：',
+  'console.settings.totp.manualSecret': '或手动输入密钥：',
+  'console.settings.totp.step2': '第 2 步：输入 App 里的 6 位验证码：',
+  'console.settings.totp.confirm': '确认',
+  'console.settings.totp.active': '账号已启用两步验证。',
+  'console.settings.totp.confirmPw': '当前密码',
+  'console.settings.totp.confirmDisable': '关闭两步验证？只凭密码就能登录了。',
+
+  'console.settings.sessions.title': '当前登录设备',
+  'console.settings.sessions.desc': '让除本设备外的所有浏览器强制重新登录一次。',
+  'console.settings.sessions.cta': '注销其他设备',
+  'console.settings.sessions.confirm': '注销所有其他浏览器？它们需要重新登录。',
+  'console.settings.sessions.done': '已完成 ✓',
 
   // --- console charts ---
   'console.charts.title': '数据分析',
@@ -1055,6 +1157,13 @@ export const zh: Dict = {
   'settings.usdToCny.desc': '仅用于双币展示。内部账本只记 USD。',
 
   // console docs entry
+  // dashboard alerts
+  'console.alerts.balanceDepleted': '余额为 $0，API 调用已被拒绝，请先充值。',
+  'console.alerts.balanceLow': '余额不足 $1，建议尽快充值以免中断。',
+  'console.alerts.keyQuotaHigh': '你有一把密钥已用掉月配额的 {pct}%。',
+  'console.alerts.keyQuotaFull': '你有一把密钥已达月配额上限，下月前无法继续使用。',
+  'console.alerts.topup': '去充值',
+
   'console.onboarding.title': '第一次用？这里教你配置 Claude Code',
   'console.onboarding.desc': '铸一把 API 密钥，设两个环境变量，发第一个请求。2 分钟读完。',
   'console.docs.link': '查看完整文档 →',
@@ -1101,6 +1210,9 @@ export const zh: Dict = {
   'login.locked.title': '失败次数过多',
   'login.locked.desc': '登录被临时锁定，约 {minutes} 分钟后再试，或用"忘记密码"重置。',
   'login.forgot': '忘记密码？',
+  'login.totp.label': '两步验证码',
+  'login.totp.hint': '你的验证器 App 中 6 位代码。',
+  'login.totp.invalid': '两步验证码错误，等下一轮再试。',
 
   // forgot password
   'forgot.title': '重置密码',
@@ -1141,6 +1253,25 @@ export const zh: Dict = {
   'audit.col.entity': '实体',
   'audit.col.detail': '详情',
   'audit.empty': '当前筛选下没有事件。',
+
+  // announcements
+  'announcements.title': '公告',
+  'announcements.subtitle': '发布后会显示在所有控制台 + 管理台页面顶部。',
+  'announcements.form.title': '标题',
+  'announcements.form.title.placeholder': '如：今晚 22:00 池子维护 10 分钟',
+  'announcements.form.body': '内容',
+  'announcements.form.body.placeholder': '短说明，会显示在标题下方。',
+  'announcements.form.severity': '级别',
+  'announcements.form.active': '立即发布',
+  'announcements.form.publish': '发布',
+  'announcements.severity.info': '通知',
+  'announcements.severity.warning': '提醒',
+  'announcements.severity.critical': '紧急',
+  'announcements.inactive': '未启用',
+  'announcements.action.activate': '启用',
+  'announcements.action.deactivate': '停用',
+  'announcements.confirm.delete': '删除这条公告？会立刻从所有页面消失。',
+  'announcements.empty': '还没有公告。',
 
   // contact
   'contact.title': '有问题找我',

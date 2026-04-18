@@ -28,6 +28,11 @@ export const userStatusEnum = pgEnum('user_status', [
   'suspended',
 ]);
 export const apiKeyStatusEnum = pgEnum('api_key_status', ['active', 'revoked']);
+export const announcementSeverityEnum = pgEnum('announcement_severity', [
+  'info',
+  'warning',
+  'critical',
+]);
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -60,6 +65,13 @@ export const users = pgTable('users', {
   passwordChangedAt: timestamp('password_changed_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
+  // TOTP (RFC 6238) 2FA. Secret is stored AES-GCM-sealed using the
+  // project ENCRYPTION_KEY — same primitive as OAuth tokens — so a DB
+  // dump alone can't be used to generate codes. `totpEnabled` flips to
+  // true only after user confirms a valid code once, so an incomplete
+  // enrollment doesn't lock them out.
+  totpSecret: text('totp_secret'),
+  totpEnabled: boolean('totp_enabled').default(false).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -146,6 +158,9 @@ export const apiKeys = pgTable('api_keys', {
   keyPreview: varchar('key_preview', { length: 16 }).notNull(), // "sk-xxf-…ab12"
   quotaMonthlyTokens: bigint('quota_monthly_tokens', { mode: 'number' }),
   usedMonthlyTokens: bigint('used_monthly_tokens', { mode: 'number' }).default(0).notNull(),
+  // Per-key model allowlist. `null` = all models; non-null (even empty
+  // array) = only those model IDs may be requested through this key.
+  allowedModels: jsonb('allowed_models').$type<string[] | null>(),
   status: apiKeyStatusEnum('status').default('active').notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true }),
   lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
@@ -242,6 +257,27 @@ export const inviteCodes = pgTable('invite_codes', {
 });
 export type InviteCode = typeof inviteCodes.$inferSelect;
 export type NewInviteCode = typeof inviteCodes.$inferInsert;
+
+// Operator-authored banners shown at the top of console + admin pages.
+// Simple 3-severity model so UI can just map severity → colour.
+export const announcements = pgTable('announcements', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  title: varchar('title', { length: 200 }).notNull(),
+  body: text('body').notNull(),
+  severity: announcementSeverityEnum('severity').default('info').notNull(),
+  active: boolean('active').default(true).notNull(),
+  // Optional scheduling — if both null, the announcement is "live while
+  // active=true". If startsAt is set, UI hides it before that time; if
+  // endsAt is set, UI hides it after.
+  startsAt: timestamp('starts_at', { withTimezone: true }),
+  endsAt: timestamp('ends_at', { withTimezone: true }),
+  createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+export type Announcement = typeof announcements.$inferSelect;
 
 export type AuditLogEntry = typeof auditLog.$inferSelect;
 export type NewAuditLogEntry = typeof auditLog.$inferInsert;

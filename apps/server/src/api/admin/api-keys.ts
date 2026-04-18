@@ -12,6 +12,7 @@ const MintSchema = z.object({
   name: z.string().min(1).max(120),
   quotaMonthlyTokens: z.number().int().nonnegative().nullable().optional(),
   expiresAt: z.string().datetime().nullable().optional(),
+  allowedModels: z.array(z.string().min(1).max(120)).nullable().optional(),
 });
 
 function toDto(k: ApiKey) {
@@ -22,6 +23,7 @@ function toDto(k: ApiKey) {
     keyPreview: k.keyPreview,
     quotaMonthlyTokens: k.quotaMonthlyTokens,
     usedMonthlyTokens: k.usedMonthlyTokens,
+    allowedModels: k.allowedModels ?? null,
     status: k.status,
     expiresAt: k.expiresAt?.toISOString() ?? null,
     lastUsedAt: k.lastUsedAt?.toISOString() ?? null,
@@ -61,6 +63,7 @@ export async function registerAdminApiKeys(app: FastifyInstance): Promise<void> 
       name: parsed.data.name,
       quotaMonthlyTokens: parsed.data.quotaMonthlyTokens ?? null,
       expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      allowedModels: parsed.data.allowedModels ?? null,
     });
     await record(req, {
       action: 'key.mint',

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { requireAdmin } from '../../middleware/admin-auth.js';
 import { registerAdminAccounts } from './accounts.js';
+import { registerAdminAnnouncements } from './announcements.js';
 import { registerAdminApiKeys } from './api-keys.js';
 import { registerAdminAudit } from './audit.js';
 import { registerAdminAuth } from './auth.js';
@@ -31,6 +32,7 @@ export async function registerAdmin(app: FastifyInstance): Promise<void> {
 
   await registerAdminAuth(app);
   await registerAdminAccounts(app);
+  await registerAdminAnnouncements(app);
   await registerAdminApiKeys(app);
   await registerAdminAudit(app);
   await registerAdminInvites(app);

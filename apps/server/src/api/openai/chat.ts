@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import { env } from '../../config/env.js';
 import { pickAccount } from '../../core/accounts/pool.js';
 import { requireApiKey } from '../../core/users/auth.js';
+import { keyAllowsModel } from '../../core/users/keys.js';
 import { recordKeyUsage } from '../../core/users/quota.js';
 import { incrementWindowUsage } from '../../core/accounts/registry.js';
 import { addWindowUsage } from '../../core/accounts/quota.js';
@@ -60,6 +61,17 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
       }
 
       const apiKey = req.apiKey!;
+      // Whitelist is checked against the user-requested model (gpt-4o
+      // etc.), NOT the translated claude-* target. Consumers think in
+      // OpenAI model ids when they scope a key.
+      if (!keyAllowsModel(apiKey, requestedModel)) {
+        return reply.code(403).send({
+          error: {
+            type: 'permission_error',
+            message: `this api key is not allowed to call model ${requestedModel}`,
+          },
+        });
+      }
       const account = await pickAccount({ provider: 'claude', ownerUserId: apiKey.userId });
       if (!account) {
         return reply.code(503).send({

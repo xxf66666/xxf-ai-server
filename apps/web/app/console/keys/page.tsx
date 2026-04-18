@@ -12,7 +12,13 @@ interface Key {
   status: 'active' | 'revoked';
   usedMonthlyTokens: number;
   quotaMonthlyTokens: number | null;
+  allowedModels: string[] | null;
   createdAt: string;
+}
+
+interface Model {
+  id: string;
+  provider: string;
 }
 
 const fmt = new Intl.NumberFormat();
@@ -26,19 +32,28 @@ export default function ConsoleKeysPage() {
     queryKey: ['console', 'keys'],
     queryFn: () => apiFetch<{ data: Key[] }>('/v1/console/keys'),
   });
+  const { data: models } = useQuery({
+    queryKey: ['console', 'models-list'],
+    queryFn: () => apiFetch<{ data: Model[] }>('/v1/console/models'),
+  });
 
   const [name, setName] = useState('');
+  const [allowedModels, setAllowedModels] = useState<string[]>([]);
   const [minted, setMinted] = useState<string | null>(null);
 
   const mint = useMutation({
     mutationFn: (n: string) =>
       apiFetch<{ key: string }>('/v1/console/keys', {
         method: 'POST',
-        body: JSON.stringify({ name: n }),
+        body: JSON.stringify({
+          name: n,
+          allowedModels: allowedModels.length === 0 ? null : allowedModels,
+        }),
       }),
     onSuccess: (res) => {
       setMinted(res.key);
       setName('');
+      setAllowedModels([]);
       qc.invalidateQueries({ queryKey: ['console', 'keys'] });
     },
   });
@@ -66,9 +81,9 @@ export default function ConsoleKeysPage() {
           e.preventDefault();
           if (name.trim()) mint.mutate(name.trim());
         }}
-        className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-background p-4"
+        className="space-y-3 rounded-lg border border-border bg-background p-4"
       >
-        <label className="flex-1 space-y-1 text-sm">
+        <label className="block space-y-1 text-sm">
           <span className="text-xs font-medium">{t('keys.form.name')}</span>
           <input
             value={name}
@@ -78,13 +93,51 @@ export default function ConsoleKeysPage() {
             className="w-full rounded-md border border-border bg-background px-2 py-1.5"
           />
         </label>
-        <button
-          type="submit"
-          disabled={mint.isPending}
-          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
-        >
-          {mint.isPending ? t('keys.form.minting') : t('keys.form.mint')}
-        </button>
+        <div className="space-y-1 text-sm">
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs font-medium">{t('keys.form.allowedModels')}</span>
+            <span className="text-[10px] text-muted-foreground">
+              {allowedModels.length === 0
+                ? t('keys.form.allowedModels.all')
+                : t('keys.form.allowedModels.n').replace('{n}', String(allowedModels.length))}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {(models?.data ?? []).map((m) => {
+              const on = allowedModels.includes(m.id);
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => {
+                    setAllowedModels((cur) =>
+                      cur.includes(m.id) ? cur.filter((x) => x !== m.id) : [...cur, m.id],
+                    );
+                  }}
+                  className={`rounded-full border px-2.5 py-0.5 font-mono text-[11px] ${
+                    on
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background hover:bg-muted'
+                  }`}
+                >
+                  {m.id}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            {t('keys.form.allowedModels.hint')}
+          </p>
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={mint.isPending}
+            className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
+          >
+            {mint.isPending ? t('keys.form.minting') : t('keys.form.mint')}
+          </button>
+        </div>
       </form>
 
       {minted && (
@@ -117,6 +170,7 @@ export default function ConsoleKeysPage() {
               <th className="px-4 py-2 font-medium">{t('keys.col.name')}</th>
               <th className="px-4 py-2 font-medium">{t('keys.col.key')}</th>
               <th className="px-4 py-2 font-medium">{t('keys.col.status')}</th>
+              <th className="px-4 py-2 font-medium">{t('keys.col.allowedModels')}</th>
               <th className="px-4 py-2 font-medium text-right">{t('keys.col.used')}</th>
               <th className="px-4 py-2"></th>
             </tr>
@@ -124,14 +178,14 @@ export default function ConsoleKeysPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
                   {t('common.loading')}
                 </td>
               </tr>
             )}
             {!isLoading && (data?.data.length ?? 0) === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
                   {t('console.keys.none')}
                 </td>
               </tr>
@@ -148,6 +202,22 @@ export default function ConsoleKeysPage() {
                   >
                     {k.status}
                   </span>
+                </td>
+                <td className="px-4 py-2 text-xs">
+                  {!k.allowedModels || k.allowedModels.length === 0 ? (
+                    <span className="text-muted-foreground">{t('keys.col.allowedModels.all')}</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {k.allowedModels.map((m) => (
+                        <span
+                          key={m}
+                          className="rounded-full border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]"
+                        >
+                          {m}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </td>
                 <td className="px-4 py-2 text-right">{fmt.format(k.usedMonthlyTokens)}</td>
                 <td className="px-4 py-2 text-right">

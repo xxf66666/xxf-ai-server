@@ -19,6 +19,7 @@ import { clearBootstrapToken } from '../../lib/auth';
 import { useT } from '../../lib/i18n/context';
 import { LocaleSwitcher } from '../../lib/i18n/LocaleSwitcher';
 import { NexaLogo } from '../../components/NexaLogo';
+import { AnnouncementBanner } from '../../components/AnnouncementBanner';
 import type { DictKey } from '../../lib/i18n/dict';
 
 interface Me {
@@ -125,7 +126,10 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
         </div>
       </aside>
       <main className="flex-1 overflow-y-auto">
-        <div className="container max-w-6xl py-8">{children}</div>
+        <div className="container max-w-6xl space-y-4 py-8">
+          <AnnouncementBanner />
+          {children}
+        </div>
       </main>
     </div>
   );
