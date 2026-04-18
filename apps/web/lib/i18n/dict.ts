@@ -574,6 +574,15 @@ export const en = {
   'audit.col.entity': 'Entity',
   'audit.col.detail': 'Detail',
   'audit.empty': 'No events match the current filters.',
+
+  // contact
+  'contact.title': 'Need help?',
+  'contact.subtitle':
+    'Reach out for onboarding support, custom invite codes, or anything else.',
+  'contact.wechat': 'WeChat',
+  'contact.wechat.show': 'Show WeChat QR',
+  'contact.wechat.title': 'Scan to add on WeChat',
+  'contact.wechat.scanHint': 'Open WeChat → Scan',
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -1132,4 +1141,12 @@ export const zh: Dict = {
   'audit.col.entity': '实体',
   'audit.col.detail': '详情',
   'audit.empty': '当前筛选下没有事件。',
+
+  // contact
+  'contact.title': '有问题找我',
+  'contact.subtitle': '账号问题、邀请码、商务合作 都可以来问。',
+  'contact.wechat': '微信',
+  'contact.wechat.show': '显示微信二维码',
+  'contact.wechat.title': '扫码加微信',
+  'contact.wechat.scanHint': '打开微信 → 扫一扫',
 };

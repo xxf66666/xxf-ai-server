@@ -7,6 +7,7 @@ import { apiFetch } from '../../../lib/api';
 import { useT } from '../../../lib/i18n/context';
 import type { DictKey } from '../../../lib/i18n/dict';
 import { ConsoleAnalytics, type Breakdown } from '../../../components/charts/ConsoleAnalytics';
+import { ContactCard } from '../../../components/ContactCard';
 
 interface Overview {
   email: string;
@@ -187,6 +188,11 @@ export default function ConsoleDashboardPage() {
       <ConsoleAnalytics
         data={breakdown ?? { byModel: [], byKey: [], byStatus: [], trend: [] }}
       />
+
+      <div className="grid gap-4 md:grid-cols-[2fr,1fr]">
+        <div className="hidden md:block" />
+        <ContactCard />
+      </div>
     </div>
   );
 }

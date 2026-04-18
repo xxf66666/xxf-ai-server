@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useT } from '../lib/i18n/context';
 import { NexaLogo } from './NexaLogo';
+import { ContactCard } from './ContactCard';
 
 export function MarketingFooter() {
   const t = useT();
@@ -14,7 +15,8 @@ export function MarketingFooter() {
           <div className="mb-2">
             <NexaLogo size={24} withWordmark />
           </div>
-          <p className="text-xs text-muted-foreground">{t('home.tagline')}</p>
+          <p className="mb-3 text-xs text-muted-foreground">{t('home.tagline')}</p>
+          <ContactCard variant="compact" />
         </div>
         <div>
           <div className="mb-2 text-xs font-medium uppercase text-muted-foreground">
