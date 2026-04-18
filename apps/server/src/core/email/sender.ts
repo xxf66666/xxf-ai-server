@@ -1,10 +1,20 @@
-import { Resend } from 'resend';
+import nodemailer, { type Transporter } from 'nodemailer';
 import { env } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
 
-const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
+function buildTransport(): Transporter | null {
+  if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) return null;
+  return nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_PORT === 465,
+    auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+  });
+}
 
-export const MAIL_ENABLED = Boolean(resend);
+const transport = buildTransport();
+
+export const MAIL_ENABLED = Boolean(transport);
 
 export interface SendResult {
   ok: boolean;
@@ -17,25 +27,21 @@ async function send(opts: {
   html: string;
   text: string;
 }): Promise<SendResult> {
-  if (!resend) {
-    return { ok: false, error: 'email service not configured (RESEND_API_KEY missing)' };
+  if (!transport) {
+    return { ok: false, error: 'email service not configured (SMTP_* missing)' };
   }
   try {
-    const result = await resend.emails.send({
+    await transport.sendMail({
       from: env.MAIL_FROM,
       to: opts.to,
       subject: opts.subject,
       html: opts.html,
       text: opts.text,
     });
-    if (result.error) {
-      logger.warn({ err: result.error, to: opts.to }, 'resend send returned error');
-      return { ok: false, error: String(result.error.message ?? result.error) };
-    }
     return { ok: true };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    logger.warn({ err, to: opts.to }, 'resend send threw');
+    logger.warn({ err, to: opts.to }, 'smtp send threw');
     return { ok: false, error: msg };
   }
 }

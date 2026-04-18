@@ -54,8 +54,11 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       EGRESS_PROXIES: ${EGRESS_PROXIES:-}
       PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:3000}
-      RESEND_API_KEY: ${RESEND_API_KEY:-}
-      MAIL_FROM: ${MAIL_FROM:-xxf-ai-server <onboarding@resend.dev>}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-xxf-ai-server <noreply@localhost>}
     ports:
       - "127.0.0.1:8787:8787"
 

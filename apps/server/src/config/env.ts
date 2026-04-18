@@ -35,12 +35,15 @@ const schema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
 
-  // Email (Resend). If RESEND_API_KEY is empty, email verification is
-  // disabled gracefully — users are marked verified on register to keep
-  // the UX flowing. Set MAIL_FROM to a verified domain address for
-  // production; defaults to Resend's onboarding sandbox.
-  RESEND_API_KEY: z.string().optional(),
-  MAIL_FROM: z.string().default('xxf-ai-server <onboarding@resend.dev>'),
+  // Email (SMTP). If SMTP_HOST/USER/PASS aren't all set, email
+  // verification is disabled gracefully — users are marked verified on
+  // register. Works with any provider (Tencent SES, QQ Exmail, Gmail,
+  // SendGrid SMTP, etc.). MAIL_FROM must be a verified sender address.
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(465),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  MAIL_FROM: z.string().default('xxf-ai-server <noreply@localhost>'),
 
   CLAUDE_OAUTH_CLIENT_ID: z.string().optional(),
   CHATGPT_OAUTH_CLIENT_ID: z.string().optional(),
