@@ -1,6 +1,7 @@
 # @xxf/web
 
-Admin console for `xxf-ai-server`. Next.js 15 App Router, Tailwind, shadcn-style primitives
+Admin console + consumer dashboard + marketing surface for **Nexa** (repo-name
+`xxf-ai-server`). Next.js 15 App Router, Tailwind, shadcn-style primitives
 (copied in rather than depended on).
 
 ## Scripts

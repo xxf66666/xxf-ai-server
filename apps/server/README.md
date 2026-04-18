@@ -1,7 +1,8 @@
 # @xxf/server
 
-Fastify API gateway for `xxf-ai-server`. See the top-level [README](../../README.md) and
-[architecture doc](../../docs/architecture.md) for context.
+Fastify API gateway for **Nexa** (repo-name `xxf-ai-server`). See the
+top-level [README](../../README.md) and [architecture doc](../../docs/architecture.md)
+for context.
 
 ## Scripts
 

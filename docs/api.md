@@ -170,14 +170,19 @@ Node.js 默认指标。**无鉴权**；用 Caddy IP 白名单保护。
 ## 5. 管理台 API
 
 所有 `/admin/v1/*` 端点都通过 `preHandler` hook 检查 JWT cookie 或引导令牌。
-**例外**：`/admin/v1/auth/login` 和 `/admin/v1/auth/register` 公开。
+**例外**（公开）：login / register / 邮箱验证 / 密码重置 四组路径。
 
-### 认证
+### 认证 + 账户生命周期
 
 | 方法 | 路径 | 作用 |
 |---|---|---|
-| POST | `/admin/v1/auth/login` | email + password → JWT cookie；角色随 payload 返回 |
-| POST | `/admin/v1/auth/register` | 公开；需 `inviteCode`；建 consumer + 赠 welcome credit + 种 cookie |
+| POST | `/admin/v1/auth/login` | email + password → JWT cookie；角色随 payload 返回。**失败码**：`401 authentication_error`、`403 email_not_verified`（body 带 email）、`403 account_suspended`、`423 account_locked`（body 带 `retryAfterSec`） |
+| POST | `/admin/v1/auth/register` | 公开；需 `inviteCode`；建 consumer + 赠 welcome credit；**不发 cookie**。返回 `{ status, verificationSent }`：SMTP 已配 → `pending_verification`，无 SMTP → 降级 `active` |
+| POST | `/admin/v1/auth/verify-email/request` | 公开；body `{ email }`；对已注册 pending 用户发重置邮件；**无论命中与否都返回 `{ok:true}` 反枚举** |
+| POST | `/admin/v1/auth/verify-email/confirm` | 公开；body `{ token }`；消费 token 并原子地把 `pending → active` |
+| POST | `/admin/v1/auth/verify-email/send` | 登录用户手动重发（dashboard 上的"重发"按钮用这个） |
+| POST | `/admin/v1/auth/password-reset/request` | 公开；body `{ email }`；反枚举；60 分钟 TTL token |
+| POST | `/admin/v1/auth/password-reset/confirm` | 公开；body `{ token, password }`；消费 token + 更新密码 + 清零失败计数 / 锁定 |
 | POST | `/admin/v1/auth/logout` | 清 cookie |
 | GET | `/admin/v1/auth/me` | 返回当前 session（sub/email/role/exp） |
 
@@ -195,9 +200,10 @@ Node.js 默认指标。**无鉴权**；用 Caddy IP 白名单保护。
 
 | 方法 | 路径 | 作用 |
 |---|---|---|
-| GET | `/admin/v1/users` | 列表 |
+| GET | `/admin/v1/users` | 列表；每条带 `status`、`emailVerified`、`lastLoginAt`、`lastLoginIp`、`failedLoginCount`、`locked`、`lockedUntil` |
 | POST | `/admin/v1/users` | 新建 |
-| PATCH | `/admin/v1/users/:id` | 改 role / 重置密码 |
+| PATCH | `/admin/v1/users/:id` | 改 role / 重置密码 / 改 status（`active` / `pending_verification` / `suspended`）/ `unlock:true` 清暴力失败计数。改到 `active` 会同时把 `emailVerified=true`（"强制激活"语义） |
+| PATCH | `/admin/v1/users/:id/balance` | 调整余额（`deltaMud` + `reason`） |
 | DELETE | `/admin/v1/users/:id` | 删除 |
 
 ### API Key

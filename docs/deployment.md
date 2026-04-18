@@ -81,11 +81,40 @@ Caddy 路由：
 | `NODE_ENV` | `production`（生产） / `development`（本地） |
 | `DATABASE_URL` | Postgres 连接串；compose 里通过 service name 连 |
 | `REDIS_URL` | Redis 连接串 |
+| `PUBLIC_API_URL` | 对外 API 地址，注入邮件链接前缀 |
+| `PUBLIC_WEB_URL` | 对外前台地址，邮件中的验证 / 重置链接基于它拼 URL |
 | `ENCRYPTION_KEY` | **32 字节十六进制**（64 字符），AES-GCM 静态加密 token |
 | `JWT_SECRET` | **至少 32 字符**随机串 |
 | `ADMIN_BOOTSTRAP_TOKEN` | **至少 16 字符**，引导令牌，首次部署 / 应急用 |
 | `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW_SECONDS` | 默认 60 req / 60 s |
 | `HTTPS_PROXY` / `NO_PROXY` | 本地开发绕火墙；生产通常为空 |
+
+### SMTP（邮箱验证 + 密码重置）
+
+网关用标准 SMTP 发验证邮件和密码重置邮件。**四个变量必须全填**，否则邮件功能自动
+降级 —— 注册直接把用户标记为 `active`（适合本地开发），**但生产必须配齐**，否则
+没人能完成邮箱验证。
+
+| 变量 | 说明 |
+|---|---|
+| `SMTP_HOST` | SMTP 服务器。腾讯云 SES 用 `gz-smtp.qcloudmail.com`（⚠️ 必须带 `gz-` 前缀，`smtp.qcloudmail.com` 不工作） |
+| `SMTP_PORT` | 默认 `465`（SSL） |
+| `SMTP_USER` | 发件人地址，如 `verify@mail.你的域名` |
+| `SMTP_PASS` | **发信人专用 SMTP 密码**（不是邮箱登录密码）；在 SMTP 服务商控制台生成，腾讯云 SES 的密码生效有 5 分钟 TTL |
+| `MAIL_FROM` | 邮件 `From:` 头，如 `Nexa <verify@mail.你的域名>` |
+
+线上实例用腾讯云邮件推送（免费 500 封/日）。其他可选：QQ 企业邮（`smtp.exmail.qq.com:465`）、
+Gmail（需应用密码）、SendGrid SMTP（`smtp.sendgrid.net:587`）等。
+
+### 发信域名的 DNS
+
+以腾讯云 SES 为例（其他家类似）：
+- `MX` `mail` → `mxbiz1.qq.com` 优先级 1
+- `TXT` `mail` → `v=spf1 include:qcloudmail.com ~all`
+- `TXT` `qcloud._domainkey.mail` → Tencent 生成的 DKIM 公钥
+- `TXT` `_dmarc.mail` → `v=DMARC1; p=none;`
+
+等腾讯云控制台显示"验证通过"再把 `SMTP_*` 写入 `.env` 并重启 `server` 容器。
 
 ## 6. 升级
 

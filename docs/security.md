@@ -55,6 +55,56 @@
 - 引导令牌 `ADMIN_BOOTSTRAP_TOKEN`：仅用于首次部署 / 恢复，生产环境应该在建 admin 后
   **从 `.env` 删除**。
 
+### 4.1 账户生命周期硬门槛
+
+见 [ADR 0008](adr/0008-user-lifecycle.md)。要点：
+
+- 用户三态 `pending_verification` / `active` / `suspended`；**只有 active 能登录和调 API**。
+- 注册完不自动登录 —— 必须点验证邮件里的链接才能切到 `active`。
+- `/admin/v1/auth/verify-email/request` 是公开重发接口，对未注册邮箱和已注册邮箱返回
+  完全相同的 200 `{ok:true}`，避免用户枚举。
+- 验证 token 48 小时 TTL，单次消费（`used_at` 原子更新）。
+- token 被消费后走 `pending_verification → active` 迁移，但 **`suspended` 不会**被
+  过期 token 反激活（CASE WHEN 防御）。
+
+### 4.2 暴力登录防护
+
+- 5 次失败密码 → `locked_until = now() + 15 min`。触发锁定那次直接 423 响应，带
+  `retryAfterSec`。
+- 锁定检查在密码 verify **之前**：防止攻击者利用 argon2 的 CPU 成本做放大/时序攻击。
+- 未注册邮箱不计数器、不泄露"此邮箱是否存在"的信息 —— verify 仍然走一次 bogus hash
+  保持时序一致。
+- 成功登录清零计数器，`last_login_at` / `last_login_ip` 落库便于审计。
+- 管理员在 `/users` 页可一键解锁（PATCH 带 `unlock:true`）。
+
+### 4.3 密码重置
+
+- 公开接口 `/admin/v1/auth/password-reset/request` 发重置邮件，反枚举。
+- token 60 分钟 TTL（比 email 验证更严，重置是高危动作）。
+- `/admin/v1/auth/password-reset/confirm` 原子地：消费 token → 更新密码哈希 →
+  清零失败计数 / 锁定时间。
+- ⚠️ **已知妥协**：重置后已签发的 JWT cookie **不会失效**（无状态 session 的代价）
+  —— 被攻击者抢先拿到密码的窗口内仍能用旧 session。缓解方式在 roadmap：按 user 的
+  `password_changed_at` 戳在 JWT claims 里比对。
+
+### 4.4 审计日志
+
+所有账号事件落 `audit_log`：
+
+| action | 触发 |
+|---|---|
+| `user.register` | 注册成功 |
+| `user.email_verified` | 邮箱验证链接点成功 |
+| `user.email_verify_resend` | 控制台重发验证信 |
+| `user.login` | 登录成功（带 IP） |
+| `user.login_failed` | 密码错（带失败次数 / IP / 是否触发锁定） |
+| `user.password_reset` | 重置完成 |
+| `user.update` / `user.delete` | 管理员改角色 / 状态 / 密码 / 删除 |
+| `user.balance_adjust` | 余额调整（含 delta + 备注） |
+| `redeem.*` / `invites.*` | 卡密 / 邀请码生命周期 |
+
+管理员 `/audit` 页按 action / actor / 时间筛选，20 秒自动刷新。
+
 ## 5. 传输层
 
 - 仅 TLS 1.3（Caddy 默认）。

@@ -6,6 +6,58 @@
 
 ## [未发布]
 
+### 品牌 — 重命名为 Nexa
+
+- 对外站名 / logo / 邮件主题 / 前端标题 全部从 `xxf-ai-server` 改为 **Nexa**。
+- 仓库名 `xxf-ai-server` 和 npm 包名 `@xxf/*` 保持不变（只改显示层）。
+- 新 logo：纯黑 `#0A0F1E` 圆角方块 + 白色带 6° 斜体的几何 "N"；字标用 Instrument Serif 斜体。
+- favicon / apple-touch / og 全套 SVG 图标。
+
+### 安全 — 用户生命周期 + 账户硬门槛（Phase 1+2）
+
+详见 [ADR 0008](docs/adr/0008-user-lifecycle.md)。
+
+- **`users.status` 三态**：`pending_verification` / `active` / `suspended`。
+  迁移 `0005` 把所有存量用户一次性置为 `active`。
+- **注册硬门槛**：注册不自动登录、不发 cookie，必须点邮件链接才能把状态切到 `active`。
+  SMTP 未配时降级 `active`（保留本地开发无邮箱路径）。
+- **登录拒绝非 active**：`email_not_verified`（403）和 `account_suspended`（403）
+  两种错误码分别响应，前端按类型分别展示提示和重发按钮。
+- **暴力登录防护**：5 次密码错 → 锁 15 分钟（迁移 `0006`）。锁检查在 argon2 verify
+  之前。触发锁定那次直接返回 423 带 `retryAfterSec`。
+- **密码重置**：`/forgot-password` + `/reset-password` 页，`password_reset_tokens`
+  表（60 分钟 TTL），反枚举的公开 request 接口。
+- **邮箱验证重发接口**：`/admin/v1/auth/verify-email/request` 公开 + 反枚举。
+- **管理员用户管理**：`/users` 页加 status 徽章 + 过滤 + 强制激活 / 禁用 / 解禁 / 解锁
+  按钮，新增"最后登录 + IP"列。
+- **审计日志**：`user.login` / `user.login_failed` / `user.password_reset` 进
+  `audit_log`；管理员 `/audit` 页按 action/actor/date 筛选，20 秒自动刷新。
+
+### 邮件 — 从 Resend 切到 nodemailer SMTP
+
+- Resend 账号在生产前被风控冻结，换成通用 SMTP。
+- 生产用腾讯云邮件推送（`gz-smtp.qcloudmail.com:465`，500 封/日免费）。
+  **坑点**：host 必须带 `gz-` 前缀，普通 `smtp.qcloudmail.com` 不工作。
+- `.env` 变量从 `RESEND_API_KEY` 改成 `SMTP_HOST/PORT/USER/PASS` + `MAIL_FROM`。
+- 邮件模板用 Nexa 品牌色 `#0A0F1E`；中英双语 subject + body。
+
+### 前台 UX 升级
+
+- **Landing**：Hero 加 Live-dot 徽章 + "Nexa" 藏字（Instrument Serif）+ 4 格
+  统计条（models · 折扣 · 欢迎额度 · 延迟）；特性卡片渐变小图标 + 悬停微抬；
+  CTA 改成全宽渐变卡片；全页 fade-up 入场动画。
+- **眼睛更灵动**：鼠标静止 1.5s 后 Lissajous 漂移；随机 4-8s 眨眼；接近时瞳孔放大。
+- **官方厂商图标**：`ProviderIcon` 换成 Simple Icons (CC0) 的官方 SVG —— Anthropic
+  陶土橙 "A" + OpenAI 四瓣结。
+- **价格明确单位**：所有价格行加 `/ 1M tokens` / `每百万 token` 后缀。
+- **控制台可用模型页**：从"只有 id + provider"扩成完整价格表（官方价 vs 本站价 + 折扣）。
+
+### 管理后台 UX
+
+- **邀请码一键复制话术**：点按钮把"🎉 邀请你加入 Nexa... 注册地址... 邀请码... 送 $5"
+  复制到剪贴板，直接粘到群聊或邮件。
+- **联系方式卡片**：运营底部 + 客户后台 dashboard 都加了邮箱 + 微信二维码弹窗。
+
 ### 新增 — 计费 / 邀请码 / 公开文档页
 
 - **模型价格表** `model_pricing`：初始化 8 个模型的官方价（Claude Opus 4.7 $15/$75 per 1M

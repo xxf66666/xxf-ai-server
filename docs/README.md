@@ -1,6 +1,6 @@
 # 文档中心
 
-`xxf-ai-server` 文档集的索引。
+**Nexa**（仓库名 `xxf-ai-server`）文档集的索引。
 
 ## 所有人读
 
@@ -30,6 +30,7 @@
 - [0005 — 计费模型：统一折扣 + micro-USD + 欢迎额度](adr/0005-pricing-model.md)
 - [0006 — 邀请码限制注册](adr/0006-invite-gated-registration.md)
 - [0007 — i18n 扁平化字典方案](adr/0007-i18n-approach.md)
+- [0008 — 用户生命周期 + 邮箱验证硬门槛](adr/0008-user-lifecycle.md)
 
 新决策应追加下一个编号的 ADR；已过期的 ADR 标注 **superseded** 并链接到新的，
 **不删除**。
