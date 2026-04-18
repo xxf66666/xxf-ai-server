@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../../lib/api';
+import { AlertCircle, MailWarning } from 'lucide-react';
+import { ApiError, apiFetch } from '../../lib/api';
 import { setBootstrapToken } from '../../lib/auth';
 import { useT } from '../../lib/i18n/context';
 import { AuthShell } from '../../components/AuthShell';
@@ -16,6 +17,8 @@ interface Me {
   role: 'admin' | 'contributor' | 'consumer';
 }
 
+type ApiBody = { error?: { type?: string; message?: string; email?: string } };
+
 function landingFor(role: Me['role']): string {
   return role === 'consumer' ? '/console/dashboard' : '/dashboard';
 }
@@ -27,6 +30,9 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '', token: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState<{ email: string } | null>(null);
+  const [suspended, setSuspended] = useState(false);
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
 
   useEffect(() => {
     void apiFetch<Me>('/admin/v1/auth/me')
@@ -37,6 +43,8 @@ export default function LoginPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setPending(null);
+    setSuspended(false);
     setSubmitting(true);
     try {
       let role: Me['role'] = 'consumer';
@@ -53,9 +61,36 @@ export default function LoginPage() {
       }
       router.replace(landingFor(role) as never);
     } catch (err) {
+      if (err instanceof ApiError) {
+        const body = err.body as ApiBody | null;
+        const etype = body?.error?.type;
+        if (etype === 'email_not_verified') {
+          setPending({ email: body?.error?.email ?? form.email });
+          setResendState('idle');
+          return;
+        }
+        if (etype === 'account_suspended') {
+          setSuspended(true);
+          return;
+        }
+      }
       setError(err instanceof Error ? err.message : t('common.unknown'));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const onResendVerify = async () => {
+    if (!pending) return;
+    setResendState('sending');
+    try {
+      await apiFetch('/admin/v1/auth/verify-email/request', {
+        method: 'POST',
+        body: JSON.stringify({ email: pending.email }),
+      });
+      setResendState('sent');
+    } catch {
+      setResendState('idle');
     }
   };
 
@@ -119,11 +154,48 @@ export default function LoginPage() {
           </label>
         )}
 
+        {pending && (
+          <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+            <div className="flex items-start gap-2">
+              <MailWarning className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <div className="font-medium">{t('login.pending.title')}</div>
+                <div className="mt-1">
+                  {t('login.pending.desc').replace('{email}', pending.email)}
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onResendVerify}
+              disabled={resendState !== 'idle'}
+              className="w-full rounded-md border border-amber-300 bg-background px-3 py-1.5 font-medium hover:bg-amber-100 disabled:opacity-60"
+            >
+              {resendState === 'sent'
+                ? t('login.pending.resent')
+                : resendState === 'sending'
+                ? t('login.pending.sending')
+                : t('login.pending.resend')}
+            </button>
+          </div>
+        )}
+
+        {suspended && (
+          <div className="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 p-3 text-xs text-red-800">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <div className="font-medium">{t('login.suspended.title')}</div>
+              <div className="mt-1">{t('login.suspended.desc')}</div>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             {error}
           </div>
         )}
+
         <button
           type="submit"
           disabled={submitting}

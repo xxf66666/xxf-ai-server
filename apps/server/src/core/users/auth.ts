@@ -39,6 +39,20 @@ export async function requireApiKey(req: FastifyRequest, reply: FastifyReply): P
     });
   }
   const owner = (await db.select().from(users).where(eq(users.id, key.userId)).limit(1))[0] ?? null;
+  // Lifecycle gate. Admin can revoke service by flipping status to
+  // 'suspended'; pending users shouldn't be able to call the API either.
+  if (owner && owner.status !== 'active') {
+    return void reply.code(403).send({
+      type: 'error',
+      error: {
+        type: 'permission_error',
+        message:
+          owner.status === 'suspended'
+            ? 'account suspended; contact the operator'
+            : 'email not verified',
+      },
+    });
+  }
   // Balance gate: only `consumer` accounts are charged. Admin + contributor
   // may use the API without prepaid balance (they operate the gateway).
   // Hard-cut at <= 0: last request can overshoot by one call since we debit

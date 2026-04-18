@@ -19,6 +19,10 @@ const CreateSchema = z.object({
 const UpdateSchema = z.object({
   role: z.enum(USER_ROLES).optional(),
   password: z.string().min(8).optional(),
+  // Admin may force a user into any lifecycle state. Most commonly:
+  // 'active'  — unlock / force-verify without email round-trip
+  // 'suspended' — disable access (login + API) without deleting records
+  status: z.enum(['pending_verification', 'active', 'suspended']).optional(),
 });
 
 const BalanceSchema = z.object({
@@ -32,8 +36,11 @@ function toDto(u: User) {
     id: u.id,
     email: u.email,
     role: u.role,
+    status: u.status,
+    emailVerified: u.emailVerified,
     balanceMud: Number(u.balanceMud ?? 0),
     spentMud: Number(u.spentMud ?? 0),
+    lastLoginAt: u.lastLoginAt ? u.lastLoginAt.toISOString() : null,
     createdAt: u.createdAt.toISOString(),
   };
 }
@@ -94,6 +101,17 @@ export async function registerAdminUsers(app: FastifyInstance): Promise<void> {
     const patch: Partial<User> = { updatedAt: new Date() };
     if (parsed.data.role) patch.role = parsed.data.role;
     if (parsed.data.password) patch.passwordHash = await hashPassword(parsed.data.password);
+    if (parsed.data.status) {
+      patch.status = parsed.data.status;
+      // Force-verify: when admin flips to 'active', also flag email as
+      // verified so downstream UI treats them as fully set up. Flipping
+      // away from 'active' does NOT touch email verification — that is
+      // a separate fact about the user.
+      if (parsed.data.status === 'active') {
+        patch.emailVerified = true;
+        patch.emailVerifiedAt = new Date();
+      }
+    }
     await db.update(users).set(patch).where(eq(users.id, id));
     const [row] = await db.select().from(users).where(eq(users.id, id)).limit(1);
     if (!row) return reply.code(404).send({ error: 'not_found' });
@@ -103,6 +121,7 @@ export async function registerAdminUsers(app: FastifyInstance): Promise<void> {
       entityId: id,
       detail: {
         role: parsed.data.role ?? undefined,
+        status: parsed.data.status ?? undefined,
         passwordChanged: Boolean(parsed.data.password),
       },
     });

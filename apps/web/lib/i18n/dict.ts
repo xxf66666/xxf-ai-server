@@ -101,6 +101,20 @@ export const en = {
   'users.role.consumer': 'consumer',
   'users.role.contributor': 'contributor',
   'users.role.admin': 'admin',
+  'users.col.status': 'Status',
+  'users.col.lastLogin': 'Last login',
+  'users.filter.all': 'All',
+  'users.status.active': 'active',
+  'users.status.pending': 'pending email',
+  'users.status.suspended': 'suspended',
+  'users.action.forceVerify': 'Force activate',
+  'users.action.suspend': 'Suspend',
+  'users.action.reactivate': 'Reactivate',
+  'users.confirm.forceVerify':
+    'Force-activate {email} without email verification? Use this only for trusted users whose email bounced.',
+  'users.confirm.suspend':
+    'Suspend {email}? Their login and API keys will stop working immediately.',
+  'users.empty': 'No users match this filter.',
 
   // --- keys ---
   'keys.title': 'API keys',
@@ -458,18 +472,45 @@ export const en = {
   'verify.title': 'Verify your email',
   'verify.loading': 'Confirming your email…',
   'verify.ok.title': 'Email verified',
-  'verify.ok.sub': 'All set — you can now use all features.',
-  'verify.ok.msg': 'Your email has been successfully verified. Welcome aboard.',
-  'verify.ok.cta': 'Go to dashboard',
+  'verify.ok.sub': 'All set — you can now sign in.',
+  'verify.ok.msg': 'Your email has been verified. Head to the sign-in page to continue.',
+  'verify.ok.cta': 'Sign in',
   'verify.err.noToken': 'Missing verification token.',
   'verify.err.generic':
-    'This verification link is invalid or has expired. Request a new one from the dashboard.',
+    'This verification link is invalid or has expired. Request a new one from the sign-in page.',
   'verify.banner.title': 'Please verify your email',
   'verify.banner.desc':
     'We sent a verification link to {email}. Check your inbox (including spam).',
   'verify.banner.resend': 'Resend',
   'verify.banner.sending': 'sending…',
   'verify.banner.resent': 'sent ✓',
+
+  // register → pending verification state
+  'register.done.title': 'Almost there',
+  'register.done.sub': 'One quick step to activate your account.',
+  'register.done.sentTitle': 'Verification email sent',
+  'register.done.sentDesc':
+    'We sent a verification link to {email}. Click it to activate your account, then come back and sign in.',
+  'register.done.sendFailedTitle': 'Email delivery failed',
+  'register.done.sendFailedDesc':
+    'Your account was created but we could not send the verification email. Try resending below, or contact the administrator.',
+  'register.done.resend': 'Resend verification email',
+  'register.done.resending': 'sending…',
+  'register.done.resent': 'Email resent',
+  'register.done.goLogin': 'I verified — go to sign-in',
+  'register.done.hint':
+    'The link is valid for 48 hours. Check your spam folder if you don\'t see it.',
+
+  // login → gated states
+  'login.pending.title': 'Verify your email first',
+  'login.pending.desc':
+    'Your account {email} is pending email verification. Click the link we sent, then sign in.',
+  'login.pending.resend': 'Resend verification email',
+  'login.pending.sending': 'sending…',
+  'login.pending.resent': 'Email resent ✓',
+  'login.suspended.title': 'Account suspended',
+  'login.suspended.desc':
+    'This account has been disabled by an administrator. Contact the operator if you think this is a mistake.',
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -574,6 +615,19 @@ export const zh: Dict = {
   'users.role.consumer': '消费者',
   'users.role.contributor': '贡献者',
   'users.role.admin': '管理员',
+  'users.col.status': '状态',
+  'users.col.lastLogin': '上次登录',
+  'users.filter.all': '全部',
+  'users.status.active': '正常',
+  'users.status.pending': '待验证邮箱',
+  'users.status.suspended': '已禁用',
+  'users.action.forceVerify': '强制激活',
+  'users.action.suspend': '禁用',
+  'users.action.reactivate': '解禁',
+  'users.confirm.forceVerify':
+    '强制激活 {email}？这会跳过邮箱验证，仅用于邮箱退信但本人可信的情况。',
+  'users.confirm.suspend': '禁用 {email}？登录和 API Key 会立刻失效。',
+  'users.empty': '该筛选下没有用户。',
 
   // --- keys ---
   'keys.title': 'API 密钥',
@@ -923,14 +977,39 @@ export const zh: Dict = {
   'verify.title': '验证邮箱',
   'verify.loading': '正在确认邮箱…',
   'verify.ok.title': '邮箱已验证',
-  'verify.ok.sub': '搞定 —— 所有功能都可以用了。',
-  'verify.ok.msg': '你的邮箱已成功验证。欢迎！',
-  'verify.ok.cta': '进入控制台',
+  'verify.ok.sub': '搞定 —— 现在可以登录了。',
+  'verify.ok.msg': '邮箱已成功验证，去登录页继续使用。',
+  'verify.ok.cta': '前往登录',
   'verify.err.noToken': '验证链接缺少 token。',
-  'verify.err.generic': '验证链接无效或已过期，请回控制台重新发送。',
+  'verify.err.generic': '验证链接无效或已过期，请在登录页重新发送。',
   'verify.banner.title': '请验证你的邮箱',
   'verify.banner.desc': '我们已向 {email} 发送了验证链接，请查收（包括垃圾邮件）。',
   'verify.banner.resend': '重新发送',
   'verify.banner.sending': '发送中…',
   'verify.banner.resent': '已发送 ✓',
+
+  // register → pending verification state
+  'register.done.title': '差一步',
+  'register.done.sub': '再点个邮件里的链接就激活了。',
+  'register.done.sentTitle': '验证邮件已发送',
+  'register.done.sentDesc':
+    '我们向 {email} 发了一封验证邮件，点链接激活账号后回来登录即可。',
+  'register.done.sendFailedTitle': '邮件发送失败',
+  'register.done.sendFailedDesc':
+    '账号已创建，但验证邮件没发出去。试试下方重发，或联系管理员处理。',
+  'register.done.resend': '重新发送验证邮件',
+  'register.done.resending': '发送中…',
+  'register.done.resent': '已重发 ✓',
+  'register.done.goLogin': '我已验证 —— 去登录',
+  'register.done.hint': '链接 48 小时内有效。没收到就翻一下垃圾箱。',
+
+  // login → gated states
+  'login.pending.title': '请先验证邮箱',
+  'login.pending.desc':
+    '账号 {email} 还没完成邮箱验证，点验证邮件里的链接后再登录。',
+  'login.pending.resend': '重新发送验证邮件',
+  'login.pending.sending': '发送中…',
+  'login.pending.resent': '已重发 ✓',
+  'login.suspended.title': '账号已被禁用',
+  'login.suspended.desc': '管理员已禁用此账号，如有异议请联系运营方。',
 };

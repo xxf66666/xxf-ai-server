@@ -3,10 +3,19 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { CheckCircle2, MailCheck } from 'lucide-react';
 import { apiFetch } from '../../lib/api';
 import { useT } from '../../lib/i18n/context';
 import { AuthShell } from '../../components/AuthShell';
 import { PasswordStrength, scoreStrength } from '../../components/PasswordStrength';
+
+interface RegisterResponse {
+  id: string;
+  email: string;
+  role: string;
+  status: 'pending_verification' | 'active';
+  verificationSent: boolean;
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -21,6 +30,8 @@ export default function RegisterPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<RegisterResponse | null>(null);
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
 
   useEffect(() => {
     void apiFetch('/admin/v1/auth/me')
@@ -56,7 +67,7 @@ export default function RegisterPage() {
     }
     setSubmitting(true);
     try {
-      await apiFetch('/admin/v1/auth/register', {
+      const res = await apiFetch<RegisterResponse>('/admin/v1/auth/register', {
         method: 'POST',
         body: JSON.stringify({
           email: form.email,
@@ -64,13 +75,85 @@ export default function RegisterPage() {
           inviteCode: form.inviteCode,
         }),
       });
-      router.replace('/console/dashboard' as never);
+      if (res.status === 'active') {
+        // No email provider — server skipped verification, go sign in.
+        router.replace('/login' as never);
+        return;
+      }
+      setDone(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('common.unknown'));
     } finally {
       setSubmitting(false);
     }
   };
+
+  const onResend = async () => {
+    if (!done) return;
+    setResendState('sending');
+    try {
+      await apiFetch('/admin/v1/auth/verify-email/request', {
+        method: 'POST',
+        body: JSON.stringify({ email: done.email }),
+      });
+      setResendState('sent');
+    } catch {
+      setResendState('idle');
+    }
+  };
+
+  if (done) {
+    return (
+      <AuthShell title={t('register.done.title')} subtitle={t('register.done.sub')}>
+        <div className="space-y-5">
+          <div className="flex items-start gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+            <MailCheck className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <div className="font-medium">
+                {done.verificationSent
+                  ? t('register.done.sentTitle')
+                  : t('register.done.sendFailedTitle')}
+              </div>
+              <div className="mt-1 text-xs">
+                {done.verificationSent
+                  ? t('register.done.sentDesc').replace('{email}', done.email)
+                  : t('register.done.sendFailedDesc')}
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onResend}
+            disabled={resendState !== 'idle'}
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted disabled:opacity-60"
+          >
+            {resendState === 'sent' ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                {t('register.done.resent')}
+              </>
+            ) : resendState === 'sending' ? (
+              t('register.done.resending')
+            ) : (
+              t('register.done.resend')
+            )}
+          </button>
+
+          <Link
+            href="/login"
+            className="block w-full rounded-md bg-primary px-4 py-2.5 text-center text-sm font-medium text-primary-foreground"
+          >
+            {t('register.done.goLogin')}
+          </Link>
+
+          <p className="text-center text-xs text-muted-foreground">
+            {t('register.done.hint')}
+          </p>
+        </div>
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell title={t('register.title')} subtitle={t('register.subtitle')}>

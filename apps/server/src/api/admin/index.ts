@@ -17,6 +17,7 @@ const PUBLIC_PATHS = new Set([
   '/admin/v1/auth/login',
   '/admin/v1/auth/register',
   '/admin/v1/auth/verify-email/confirm',
+  '/admin/v1/auth/verify-email/request',
 ]);
 
 export async function registerAdmin(app: FastifyInstance): Promise<void> {

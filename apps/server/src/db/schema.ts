@@ -22,6 +22,11 @@ export const accountStatusEnum = pgEnum('account_status', [
 ]);
 export const planEnum = pgEnum('account_plan', ['pro', 'max5x', 'max20x', 'plus', 'pro_chatgpt']);
 export const userRoleEnum = pgEnum('user_role', ['admin', 'contributor', 'consumer']);
+export const userStatusEnum = pgEnum('user_status', [
+  'pending_verification',
+  'active',
+  'suspended',
+]);
 export const apiKeyStatusEnum = pgEnum('api_key_status', ['active', 'revoked']);
 
 export const users = pgTable('users', {
@@ -29,14 +34,20 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 320 }).notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: userRoleEnum('role').notNull().default('consumer'),
+  // Lifecycle gate. Login / API access denied for anything but 'active'.
+  //   pending_verification — registered, waiting on email click
+  //   active               — verified OR admin-force-verified
+  //   suspended            — admin-disabled (abuse, unpaid, etc.)
+  status: userStatusEnum('status').notNull().default('pending_verification'),
   // Balance & lifetime spend, stored in micro-USD (10^-6 USD).
   // $5 welcome credit = 5_000_000 mud. New users get seeded at register time.
   balanceMud: bigint('balance_mud', { mode: 'number' }).default(0).notNull(),
   spentMud: bigint('spent_mud', { mode: 'number' }).default(0).notNull(),
-  // Email verification (soft-gate: register succeeds, but UI shows a
-  // banner and some write actions are blocked until confirmed).
+  // Email verification (kept alongside status for historical timestamps;
+  // status is authoritative for access control).
   emailVerified: boolean('email_verified').default(false).notNull(),
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+  lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

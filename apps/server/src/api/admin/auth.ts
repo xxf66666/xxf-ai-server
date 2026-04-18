@@ -55,12 +55,39 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
         error: { type: 'authentication_error', message: 'invalid email or password' },
       });
     }
+    // Hard gate: only active users may log in. Pending / suspended get
+    // distinct error codes so the UI can render the right prompt.
+    if (user.status === 'pending_verification') {
+      return reply.code(403).send({
+        type: 'error',
+        error: {
+          type: 'email_not_verified',
+          message: 'please verify your email before signing in',
+          email: user.email,
+        },
+      });
+    }
+    if (user.status === 'suspended') {
+      return reply.code(403).send({
+        type: 'error',
+        error: {
+          type: 'account_suspended',
+          message: 'this account has been suspended — contact the administrator',
+        },
+      });
+    }
     // Any role may login; RBAC on protected routes handles access control.
     const token = await reply.jwtSign(
       { sub: user.id, email: user.email, role: user.role },
       { expiresIn: '7d' },
     );
     reply.setCookie(COOKIE_NAME, token, cookieOpts);
+    // Best-effort lastLoginAt; failure here must not block login.
+    void db
+      .update(users)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(users.id, user.id))
+      .catch(() => {});
     return { id: user.id, email: user.email, role: user.role };
   });
 
@@ -88,9 +115,20 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
       });
     }
     const passwordHash = await hashPassword(password);
+    // Status: pending_verification when email is enabled (hard gate).
+    // When email is not configured, auto-activate so the project remains
+    // usable in dev without SMTP — same graceful-degrade story as before.
+    const initialStatus = MAIL_ENABLED ? 'pending_verification' : 'active';
     const [created] = await db
       .insert(users)
-      .values({ email, passwordHash, role: 'consumer' })
+      .values({
+        email,
+        passwordHash,
+        role: 'consumer',
+        status: initialStatus,
+        emailVerified: !MAIL_ENABLED,
+        emailVerifiedAt: MAIL_ENABLED ? null : new Date(),
+      })
       .returning();
     if (!created) return reply.code(500).send({ error: 'insert_failed' });
     // Seed the welcome credit; non-blocking — if settings are missing we
@@ -98,34 +136,97 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
     const welcome = Number(await getSetting('pricing.welcomeCreditMud')) || 0;
     if (welcome > 0) await seedWelcomeCredit(created.id, welcome).catch(() => {});
 
-    // Kick off the verification email. Fire-and-forget: slow SMTP shouldn't
-    // block registration, and delivery failure gets surfaced via the banner
-    // on the console dashboard (with a "resend" button).
-    if (MAIL_ENABLED) {
-      void createVerificationToken(created.id)
-        .then(async (token) => {
-          const url = `${env.PUBLIC_WEB_URL}/verify-email?token=${encodeURIComponent(token)}`;
-          const res = await sendVerificationEmail(created.email, url);
-          if (!res.ok) {
-            logger.warn({ userId: created.id, error: res.error }, 'verification email send failed');
-          }
-        })
-        .catch((err) => logger.warn({ err }, 'verification email setup failed'));
-    }
-
-    // Auto-login: set cookie so the freshly-registered user lands in /console.
-    const token = await reply.jwtSign(
-      { sub: created.id, email: created.email, role: created.role },
-      { expiresIn: '7d' },
-    );
-    reply.setCookie(COOKIE_NAME, token, cookieOpts);
     await record(req, {
       action: 'user.register',
       entityType: 'user',
       entityId: created.id,
-      detail: { email: created.email },
+      detail: { email: created.email, status: initialStatus },
     });
-    return reply.code(201).send({ id: created.id, email: created.email, role: created.role });
+
+    if (!MAIL_ENABLED) {
+      // No email provider — return immediately verified. Caller should go
+      // straight to /login.
+      return reply
+        .code(201)
+        .send({
+          id: created.id,
+          email: created.email,
+          role: created.role,
+          status: 'active' as const,
+          verificationSent: false,
+        });
+    }
+
+    // Send verification email synchronously so we can tell the client
+    // whether delivery worked. If SMTP fails we still return 201 but with
+    // verificationSent=false; UI shows a "something went wrong, click
+    // resend" hint. Worst case the user can ask admin for a force-verify.
+    let verificationSent = false;
+    try {
+      const token = await createVerificationToken(created.id);
+      const url = `${env.PUBLIC_WEB_URL}/verify-email?token=${encodeURIComponent(token)}`;
+      const res = await sendVerificationEmail(created.email, url);
+      verificationSent = res.ok;
+      if (!res.ok) {
+        logger.warn(
+          { userId: created.id, error: res.error },
+          'verification email send failed',
+        );
+      }
+    } catch (err) {
+      logger.warn({ err, userId: created.id }, 'verification email flow errored');
+    }
+
+    // IMPORTANT: no cookie is set. User must verify + login separately.
+    return reply.code(201).send({
+      id: created.id,
+      email: created.email,
+      role: created.role,
+      status: 'pending_verification' as const,
+      verificationSent,
+    });
+  });
+
+  // Public: resend verification email BEFORE first login. Deliberately
+  // always returns {ok:true} regardless of whether the email exists, to
+  // avoid giving attackers a user-enumeration oracle. Rate-limited by
+  // the global /admin rate limiter; plus we only send if the user is
+  // actually in pending_verification state (verified/suspended users
+  // get silently skipped).
+  app.post('/admin/v1/auth/verify-email/request', async (req, reply) => {
+    const parsed = z
+      .object({ email: z.string().email() })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'email required' },
+      });
+    }
+    if (!MAIL_ENABLED) {
+      return reply.code(503).send({
+        type: 'error',
+        error: { type: 'api_error', message: 'email service not configured on server' },
+      });
+    }
+    const [u] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, parsed.data.email))
+      .limit(1);
+    if (u && u.status === 'pending_verification') {
+      try {
+        const token = await createVerificationToken(u.id);
+        const url = `${env.PUBLIC_WEB_URL}/verify-email?token=${encodeURIComponent(token)}`;
+        const res = await sendVerificationEmail(u.email, url);
+        if (!res.ok) {
+          logger.warn({ userId: u.id, error: res.error }, 'resend verification email failed');
+        }
+      } catch (err) {
+        logger.warn({ err }, 'resend verification email threw');
+      }
+    }
+    return { ok: true };
   });
 
   // Public: confirm token (user clicks the email link).

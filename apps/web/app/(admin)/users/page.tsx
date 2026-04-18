@@ -1,21 +1,35 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { CheckCircle2, Clock, ShieldOff } from 'lucide-react';
 import { apiFetch } from '../../../lib/api';
 import { useT } from '../../../lib/i18n/context';
+import type { DictKey } from '../../../lib/i18n/dict';
+
+type Status = 'pending_verification' | 'active' | 'suspended';
 
 interface User {
   id: string;
   email: string;
   role: string;
+  status: Status;
+  emailVerified: boolean;
   balanceMud: number;
   spentMud: number;
+  lastLoginAt: string | null;
   createdAt: string;
 }
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const mudToUsd = (mud: number) => mud / 1_000_000;
+
+const STATUS_FILTERS: Array<{ key: 'all' | Status; label: DictKey }> = [
+  { key: 'all', label: 'users.filter.all' },
+  { key: 'active', label: 'users.status.active' },
+  { key: 'pending_verification', label: 'users.status.pending' },
+  { key: 'suspended', label: 'users.status.suspended' },
+];
 
 export default function UsersPage() {
   const qc = useQueryClient();
@@ -27,6 +41,7 @@ export default function UsersPage() {
 
   const [form, setForm] = useState({ email: '', role: 'consumer' });
   const [topupTarget, setTopupTarget] = useState<User | null>(null);
+  const [filter, setFilter] = useState<'all' | Status>('all');
 
   const create = useMutation({
     mutationFn: (body: typeof form) =>
@@ -40,6 +55,29 @@ export default function UsersPage() {
     mutationFn: (id: string) => apiFetch(`/admin/v1/users/${id}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
   });
+  const patchStatus = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: Status }) =>
+      apiFetch(`/admin/v1/users/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  });
+
+  const visible = useMemo(() => {
+    const list = data?.data ?? [];
+    if (filter === 'all') return list;
+    return list.filter((u) => u.status === filter);
+  }, [data, filter]);
+
+  const counts = useMemo(() => {
+    const c = { all: 0, active: 0, pending_verification: 0, suspended: 0 };
+    for (const u of data?.data ?? []) {
+      c.all += 1;
+      c[u.status] += 1;
+    }
+    return c;
+  }, [data]);
 
   return (
     <div className="space-y-6">
@@ -87,18 +125,38 @@ export default function UsersPage() {
         </button>
       </form>
 
+      <div className="flex flex-wrap items-center gap-1 rounded-md bg-muted/40 p-1 text-xs">
+        {STATUS_FILTERS.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            onClick={() => setFilter(f.key)}
+            className={`rounded px-3 py-1.5 transition ${
+              filter === f.key
+                ? 'bg-background font-medium shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {t(f.label)}{' '}
+            <span className="ml-1 text-muted-foreground">({counts[f.key]})</span>
+          </button>
+        ))}
+      </div>
+
       {topupTarget && (
         <TopupModal user={topupTarget} onClose={() => setTopupTarget(null)} />
       )}
 
-      <div className="rounded-lg border border-border">
+      <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-left text-muted-foreground">
             <tr>
               <th className="px-4 py-2 font-medium">{t('users.col.email')}</th>
               <th className="px-4 py-2 font-medium">{t('users.col.role')}</th>
+              <th className="px-4 py-2 font-medium">{t('users.col.status')}</th>
               <th className="px-4 py-2 text-right font-medium">{t('users.col.balance')}</th>
               <th className="px-4 py-2 text-right font-medium">{t('users.col.spent')}</th>
+              <th className="px-4 py-2 font-medium">{t('users.col.lastLogin')}</th>
               <th className="px-4 py-2 font-medium">{t('users.col.created')}</th>
               <th className="px-4 py-2"></th>
             </tr>
@@ -106,12 +164,19 @@ export default function UsersPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
+                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">
                   {t('common.loading')}
                 </td>
               </tr>
             )}
-            {data?.data.map((u) => {
+            {!isLoading && visible.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">
+                  {t('users.empty')}
+                </td>
+              </tr>
+            )}
+            {visible.map((u) => {
               const isConsumer = u.role === 'consumer';
               const bal = mudToUsd(u.balanceMud);
               const balClass =
@@ -123,6 +188,7 @@ export default function UsersPage() {
                 <tr key={u.id} className="border-t border-border">
                   <td className="px-4 py-2 font-mono text-xs">{u.email}</td>
                   <td className="px-4 py-2">{u.role}</td>
+                  <td className="px-4 py-2"><StatusBadge status={u.status} /></td>
                   <td className={`px-4 py-2 text-right font-mono text-xs ${balClass}`}>
                     {isConsumer ? usd.format(bal) : t('common.dash')}
                   </td>
@@ -130,9 +196,45 @@ export default function UsersPage() {
                     {usd.format(mudToUsd(u.spentMud))}
                   </td>
                   <td className="px-4 py-2 text-xs text-muted-foreground">
+                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : t('common.dash')}
+                  </td>
+                  <td className="px-4 py-2 text-xs text-muted-foreground">
                     {new Date(u.createdAt).toLocaleString()}
                   </td>
-                  <td className="space-x-3 px-4 py-2 text-right">
+                  <td className="space-x-3 whitespace-nowrap px-4 py-2 text-right">
+                    {u.status === 'pending_verification' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm(t('users.confirm.forceVerify', { email: u.email })))
+                            patchStatus.mutate({ id: u.id, status: 'active' });
+                        }}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        {t('users.action.forceVerify')}
+                      </button>
+                    )}
+                    {u.status === 'active' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm(t('users.confirm.suspend', { email: u.email })))
+                            patchStatus.mutate({ id: u.id, status: 'suspended' });
+                        }}
+                        className="text-xs text-amber-700 hover:underline"
+                      >
+                        {t('users.action.suspend')}
+                      </button>
+                    )}
+                    {u.status === 'suspended' && (
+                      <button
+                        type="button"
+                        onClick={() => patchStatus.mutate({ id: u.id, status: 'active' })}
+                        className="text-xs text-emerald-700 hover:underline"
+                      >
+                        {t('users.action.reactivate')}
+                      </button>
+                    )}
                     {isConsumer && (
                       <button
                         type="button"
@@ -145,7 +247,8 @@ export default function UsersPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        if (confirm(t('users.confirm.delete', { email: u.email }))) del.mutate(u.id);
+                        if (confirm(t('users.confirm.delete', { email: u.email })))
+                          del.mutate(u.id);
                       }}
                       className="text-xs text-red-600 hover:underline"
                     >
@@ -159,6 +262,37 @@ export default function UsersPage() {
         </table>
       </div>
     </div>
+  );
+}
+
+function StatusBadge({ status }: { status: Status }) {
+  const t = useT();
+  const map: Record<Status, { label: DictKey; class: string; Icon: typeof CheckCircle2 }> = {
+    active: {
+      label: 'users.status.active',
+      class: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+      Icon: CheckCircle2,
+    },
+    pending_verification: {
+      label: 'users.status.pending',
+      class: 'border-amber-200 bg-amber-50 text-amber-700',
+      Icon: Clock,
+    },
+    suspended: {
+      label: 'users.status.suspended',
+      class: 'border-red-200 bg-red-50 text-red-700',
+      Icon: ShieldOff,
+    },
+  };
+  const s = map[status];
+  const Icon = s.Icon;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs ${s.class}`}
+    >
+      <Icon className="h-3 w-3" />
+      {t(s.label)}
+    </span>
   );
 }
 
