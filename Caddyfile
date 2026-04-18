@@ -4,6 +4,21 @@
 ai.example.com {
     encode zstd gzip
 
+    # /metrics — Prometheus scrape only. Lock to private ranges; edit the
+    # remote_ip list to match your scrape host(s). Public scrape = leaking
+    # traffic shape + error ratios to the world.
+    @metrics path /metrics
+    @metrics_internal {
+        path /metrics
+        remote_ip 127.0.0.1/32 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
+    }
+    handle @metrics_internal {
+        reverse_proxy server:8787
+    }
+    handle @metrics {
+        respond "metrics are internal-only" 403
+    }
+
     # Gateway: public relay API + admin JSON API
     @api path /v1/* /admin/* /healthz /readyz /version
     handle @api {

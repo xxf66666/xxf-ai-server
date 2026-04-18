@@ -57,9 +57,13 @@ export async function deleteCode(id: string): Promise<void> {
 
 /**
  * Attempt to redeem. Returns { ok: true, value } on success, or an error
- * kind describing why it failed. Atomic: the UPDATE guards on
- * `redeemed_by IS NULL AND revoked = false`, so parallel redemptions of
- * the same code lose to a NOT FOUND.
+ * kind describing why it failed.
+ *
+ * Transactional: both the claim UPDATE and the user balance increment
+ * run in a single db.transaction() so a process crash between them
+ * cannot leave a code "redeemed" while the user never received credit.
+ * Inside the tx, the claim UPDATE guards on `redeemed_by IS NULL AND
+ * revoked = false` so concurrent redemptions all-but-one see 0 rows.
  */
 export type RedeemResult =
   | { ok: true; valueMud: number }
@@ -72,35 +76,42 @@ export async function consumeRedeemCode(
   // Normalize input: users paste with / without spaces / different case.
   const normalized = code.trim().toUpperCase().replace(/\s+/g, '');
 
-  const existing = await db
-    .select()
-    .from(redeemCodes)
-    .where(eq(redeemCodes.code, normalized))
-    .limit(1);
-  if (existing.length === 0) return { ok: false, reason: 'not_found' };
-  if (existing[0]!.revoked) return { ok: false, reason: 'revoked' };
-  if (existing[0]!.redeemedByUserId) return { ok: false, reason: 'already_redeemed' };
+  return db.transaction(async (tx) => {
+    // Fast-path a friendly error for the revoked case. Missing code and
+    // already-redeemed both come back as 0-row UPDATE below; `revoked`
+    // needs a read to distinguish (UI wants to surface "revoked" vs
+    // "already redeemed" vs "not found" differently).
+    const [existing] = await tx
+      .select({ revoked: redeemCodes.revoked })
+      .from(redeemCodes)
+      .where(eq(redeemCodes.code, normalized))
+      .limit(1);
+    if (existing?.revoked) return { ok: false as const, reason: 'revoked' as const };
 
-  // Atomic claim + credit in a single UPDATE race-proof against parallel
-  // redemptions.
-  const rows = await db.execute<{ value_mud: number }>(sql`
-    UPDATE ${redeemCodes}
-       SET redeemed_by_user_id = ${userId},
-           redeemed_at = now()
-     WHERE code = ${normalized}
-       AND redeemed_by_user_id IS NULL
-       AND revoked = false
-    RETURNING value_mud
-  `);
-  if (rows.length === 0) return { ok: false, reason: 'already_redeemed' };
-  const value = Number(rows[0]!.value_mud);
-  await db
-    .update(users)
-    .set({
-      balanceMud: sql`${users.balanceMud} + ${value}`,
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, userId));
-  return { ok: true, valueMud: value };
+    const claimed = await tx.execute<{ value_mud: number }>(sql`
+      UPDATE ${redeemCodes}
+         SET redeemed_by_user_id = ${userId},
+             redeemed_at = now()
+       WHERE code = ${normalized}
+         AND redeemed_by_user_id IS NULL
+         AND revoked = false
+      RETURNING value_mud
+    `);
+    if (claimed.length === 0) {
+      return {
+        ok: false as const,
+        reason: existing ? ('already_redeemed' as const) : ('not_found' as const),
+      };
+    }
+    const value = Number(claimed[0]!.value_mud);
+    await tx
+      .update(users)
+      .set({
+        balanceMud: sql`${users.balanceMud} + ${value}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+    return { ok: true as const, valueMud: value };
+  });
 }
 

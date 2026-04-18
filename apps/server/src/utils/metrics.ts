@@ -38,3 +38,9 @@ export const circuitOpen = new Gauge({
   labelNames: ['provider'],
   registers: [registry],
 });
+
+export const billingDebitFailures = new Counter({
+  name: 'xxf_billing_debit_failed_total',
+  help: 'Count of debit_failed events — billed requests whose balance debit did NOT persist. Watch for drift and reconcile.',
+  registers: [registry],
+});

@@ -13,7 +13,7 @@ import { incrementWindowUsage } from '../accounts/registry.js';
 import { addWindowUsage } from '../accounts/quota.js';
 import { applyClassification, classifyUpstream } from '../accounts/health.js';
 import { recordKeyUsage } from '../users/quota.js';
-import { debitForRequest } from '../users/ledger.js';
+import { debitForRequestSafe } from '../users/ledger.js';
 import { computeCost } from '../pricing/index.js';
 import { createUsageAccumulator } from './stream.js';
 import { isOpen, recordRequest } from './breaker.js';
@@ -129,7 +129,7 @@ export async function relayMessages(
         incrementWindowUsage(ctx.account.id, total).catch(() => {}),
         addWindowUsage(ctx.account.id, total).catch(() => {}),
         recordKeyUsage(ctx.apiKey.id, total).catch(() => {}),
-        debitForRequest(ctx.apiKey.id, costMud).catch(() => {}),
+        debitForRequestSafe(ctx.apiKey.id, costMud),
         recordRequest('claude', false),
       ]);
       relayRequests.inc({ provider: 'claude', route: 'messages', outcome: 'ok' });
@@ -153,7 +153,7 @@ export async function relayMessages(
     incrementWindowUsage(ctx.account.id, total).catch(() => {}),
     addWindowUsage(ctx.account.id, total).catch(() => {}),
     recordKeyUsage(ctx.apiKey.id, total).catch(() => {}),
-    debitForRequest(ctx.apiKey.id, costMud).catch(() => {}),
+    debitForRequestSafe(ctx.apiKey.id, costMud),
     recordRequest('claude', false),
   ]);
   relayRequests.inc({ provider: 'claude', route: 'messages', outcome: 'ok' });

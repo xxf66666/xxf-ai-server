@@ -29,7 +29,10 @@ export interface MintResult {
 export async function mintApiKey(input: MintInput): Promise<MintResult> {
   const plaintext = mintSecret();
   const keyHash = sha256(plaintext);
-  const keyPreview = `${plaintext.slice(0, 10)}…${plaintext.slice(-4)}`;
+  // Deliberately narrow: `sk-xxf-…xxxx` — enough for the user to
+  // recognise which key is which, but without leaking 48 bits of
+  // entropy like the old "first 10 + last 4" preview did.
+  const keyPreview = `sk-xxf-…${plaintext.slice(-4)}`;
   const [row] = await db
     .insert(apiKeys)
     .values({

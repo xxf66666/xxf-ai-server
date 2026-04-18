@@ -14,9 +14,11 @@ export class ApiError extends Error {
   }
 }
 
+const DEFAULT_TIMEOUT_MS = 30_000;
+
 export async function apiFetch<T = unknown>(
   path: string,
-  init: RequestInit & { token?: string | null } = {},
+  init: RequestInit & { token?: string | null; timeoutMs?: number } = {},
 ): Promise<T> {
   // Prefer JWT cookie (credentials: 'include'); also attach bootstrap token
   // if one is stored, for first-run / emergency access.
@@ -25,11 +27,33 @@ export async function apiFetch<T = unknown>(
   if (bootstrap) headers.set('X-Admin-Token', bootstrap);
   if (init.body && !headers.has('content-type')) headers.set('content-type', 'application/json');
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...init,
-    headers,
-    credentials: 'include',
-  });
+  // Timeout via AbortController so a hung server / network stall doesn't
+  // leave the UI spinning forever. If the caller already passed a signal,
+  // chain ours after it so either can cancel.
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, signal: callerSignal, ...rest } = init;
+  const controller = new AbortController();
+  const onCallerAbort = () => controller.abort(callerSignal?.reason);
+  callerSignal?.addEventListener('abort', onCallerAbort, { once: true });
+  const timeoutHandle = setTimeout(() => controller.abort(new Error('request timeout')), timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      ...rest,
+      headers,
+      credentials: 'include',
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new ApiError(0, `request timeout after ${timeoutMs}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutHandle);
+    callerSignal?.removeEventListener('abort', onCallerAbort);
+  }
+
   const text = await res.text();
   const json = text ? safeJson(text) : null;
   if (!res.ok) {

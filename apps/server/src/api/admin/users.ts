@@ -5,6 +5,7 @@ import { users, type User } from '../../db/schema.js';
 import { USER_ROLES } from '@xxf/shared';
 import { eq, sql } from 'drizzle-orm';
 import { hashPassword } from '../../core/users/passwords.js';
+import { isStrongEnough } from '../../core/users/strength.js';
 import { record } from '../../core/audit/log.js';
 import { requireRole } from '../../middleware/rbac.js';
 import { seedWelcomeCredit } from '../../core/users/ledger.js';
@@ -72,6 +73,15 @@ export async function registerAdminUsers(app: FastifyInstance): Promise<void> {
         error: { type: 'invalid_request_error', message: parsed.error.message },
       });
     }
+    if (parsed.data.password && !isStrongEnough(parsed.data.password)) {
+      return reply.code(400).send({
+        type: 'error',
+        error: {
+          type: 'invalid_request_error',
+          message: 'password too weak — mix letters, digits and symbols',
+        },
+      });
+    }
     const passwordHash = parsed.data.password
       ? await hashPassword(parsed.data.password)
       : '!';
@@ -111,7 +121,19 @@ export async function registerAdminUsers(app: FastifyInstance): Promise<void> {
     }
     const patch: Partial<User> = { updatedAt: new Date() };
     if (parsed.data.role) patch.role = parsed.data.role;
-    if (parsed.data.password) patch.passwordHash = await hashPassword(parsed.data.password);
+    if (parsed.data.password) {
+      if (!isStrongEnough(parsed.data.password)) {
+        return reply.code(400).send({
+          type: 'error',
+          error: {
+            type: 'invalid_request_error',
+            message: 'password too weak — mix letters, digits and symbols',
+          },
+        });
+      }
+      patch.passwordHash = await hashPassword(parsed.data.password);
+      patch.passwordChangedAt = new Date(); // invalidate outstanding sessions
+    }
     if (parsed.data.status) {
       patch.status = parsed.data.status;
       // Force-verify: when admin flips to 'active', also flag email as

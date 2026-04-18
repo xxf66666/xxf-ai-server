@@ -43,6 +43,7 @@ export async function consumeResetToken(
   await db.execute(sql`
     UPDATE ${users}
        SET password_hash = ${hash},
+           password_changed_at = now(),
            failed_login_count = 0,
            locked_until = NULL,
            updated_at = now()

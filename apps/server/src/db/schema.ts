@@ -54,6 +54,12 @@ export const users = pgTable('users', {
   // further attempts until it expires (or an admin force-unlocks).
   failedLoginCount: integer('failed_login_count').default(0).notNull(),
   lockedUntil: timestamp('locked_until', { withTimezone: true }),
+  // Bumped whenever password changes (register, reset, console change,
+  // admin-set). JWTs issued before this timestamp are rejected at the
+  // auth middleware so a stolen session can't survive a password change.
+  passwordChangedAt: timestamp('password_changed_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

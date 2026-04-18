@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { db } from '../../db/client.js';
 import { users } from '../../db/schema.js';
 import { hashPassword, verifyPassword } from '../../core/users/passwords.js';
+import { isStrongEnough } from '../../core/users/strength.js';
 import { record } from '../../core/audit/log.js';
 import { consumeInvite } from '../../core/invites/index.js';
 import { seedWelcomeCredit } from '../../core/users/ledger.js';
@@ -42,8 +43,22 @@ const cookieOpts = {
   maxAge: 7 * 24 * 60 * 60,
 };
 
+// Shared guardrail for every /admin/v1/auth/* route: tight body limit
+// (JSON auth payloads are small) and an IP rate limit so credential-
+// stuffing + mail-bombing can't just pick different emails to evade the
+// per-account 5-in-15 lockout.
+const AUTH_ROUTE: { bodyLimit: number; config: { rateLimit: { max: number; timeWindow: number } } } = {
+  bodyLimit: 64 * 1024,
+  config: {
+    rateLimit: {
+      max: 20,
+      timeWindow: 60_000,
+    },
+  },
+};
+
 export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
-  app.post('/admin/v1/auth/login', async (req, reply) => {
+  app.post('/admin/v1/auth/login', AUTH_ROUTE, async (req, reply) => {
     const parsed = LoginSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({
@@ -157,7 +172,7 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
     return { id: user.id, email: user.email, role: user.role };
   });
 
-  app.post('/admin/v1/auth/register', async (req, reply) => {
+  app.post('/admin/v1/auth/register', AUTH_ROUTE, async (req, reply) => {
     const parsed = RegisterSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({
@@ -166,6 +181,15 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
       });
     }
     const { email, password, inviteCode } = parsed.data;
+    if (!isStrongEnough(password)) {
+      return reply.code(400).send({
+        type: 'error',
+        error: {
+          type: 'invalid_request_error',
+          message: 'password too weak — mix letters, digits and symbols',
+        },
+      });
+    }
     const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
     if (existing.length > 0) {
       return reply.code(409).send({
@@ -259,7 +283,7 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
   // the global /admin rate limiter; plus we only send if the user is
   // actually in pending_verification state (verified/suspended users
   // get silently skipped).
-  app.post('/admin/v1/auth/verify-email/request', async (req, reply) => {
+  app.post('/admin/v1/auth/verify-email/request', AUTH_ROUTE, async (req, reply) => {
     const parsed = z
       .object({ email: z.string().email() })
       .safeParse(req.body);
@@ -296,7 +320,7 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
   });
 
   // Public: confirm token (user clicks the email link).
-  app.post('/admin/v1/auth/verify-email/confirm', async (req, reply) => {
+  app.post('/admin/v1/auth/verify-email/confirm', AUTH_ROUTE, async (req, reply) => {
     const parsed = z.object({ token: z.string().min(1) }).safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({
@@ -316,7 +340,7 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
   });
 
   // Authenticated: re-send verification (banner button on console).
-  app.post('/admin/v1/auth/verify-email/send', async (req, reply) => {
+  app.post('/admin/v1/auth/verify-email/send', AUTH_ROUTE, async (req, reply) => {
     if (!req.adminSession || req.adminSession.sub === 'bootstrap') {
       return reply.code(401).send({ error: 'unauth' });
     }
@@ -352,7 +376,7 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
   // the user is suspended we also skip silently; they should contact
   // admin, not reset. Verified flag is not required — a user may forget
   // their password before verifying email.
-  app.post('/admin/v1/auth/password-reset/request', async (req, reply) => {
+  app.post('/admin/v1/auth/password-reset/request', AUTH_ROUTE, async (req, reply) => {
     const parsed = z.object({ email: z.string().email() }).safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({
@@ -387,7 +411,7 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
   });
 
   // Public: confirm reset token + set new password in one step.
-  app.post('/admin/v1/auth/password-reset/confirm', async (req, reply) => {
+  app.post('/admin/v1/auth/password-reset/confirm', AUTH_ROUTE, async (req, reply) => {
     const parsed = z
       .object({
         token: z.string().min(1),
@@ -398,6 +422,15 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({
         type: 'error',
         error: { type: 'invalid_request_error', message: parsed.error.message },
+      });
+    }
+    if (!isStrongEnough(parsed.data.password)) {
+      return reply.code(400).send({
+        type: 'error',
+        error: {
+          type: 'invalid_request_error',
+          message: 'password too weak — mix letters, digits and symbols',
+        },
       });
     }
     const userId = await consumeResetToken(parsed.data.token, parsed.data.password);
@@ -411,7 +444,7 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
     return { ok: true };
   });
 
-  app.post('/admin/v1/auth/logout', async (_req, reply) => {
+  app.post('/admin/v1/auth/logout', AUTH_ROUTE, async (_req, reply) => {
     reply.clearCookie(COOKIE_NAME, { path: '/' });
     return reply.code(204).send();
   });

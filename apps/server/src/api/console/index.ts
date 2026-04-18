@@ -14,6 +14,7 @@ import {
 } from '../../core/users/keys.js';
 import { consumeRedeemCode, listMyRedeemed } from '../../core/redeem/index.js';
 import { hashPassword, verifyPassword } from '../../core/users/passwords.js';
+import { isStrongEnough } from '../../core/users/strength.js';
 import { getAllSettings } from '../../core/settings/index.js';
 import { record } from '../../core/audit/log.js';
 import { requireAdmin } from '../../middleware/admin-auth.js';
@@ -397,6 +398,15 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
         error: { type: 'invalid_request_error', message: parsed.error.message },
       });
     }
+    if (!isStrongEnough(parsed.data.newPassword)) {
+      return reply.code(400).send({
+        type: 'error',
+        error: {
+          type: 'invalid_request_error',
+          message: 'new password too weak — mix letters, digits and symbols',
+        },
+      });
+    }
     const [me] = await db.select().from(users).where(eq(users.id, uid)).limit(1);
     if (!me) return reply.code(404).send({ error: 'not_found' });
     if (!(await verifyPassword(me.passwordHash, parsed.data.currentPassword))) {
@@ -407,7 +417,11 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
     }
     await db
       .update(users)
-      .set({ passwordHash: await hashPassword(parsed.data.newPassword), updatedAt: new Date() })
+      .set({
+        passwordHash: await hashPassword(parsed.data.newPassword),
+        passwordChangedAt: new Date(),
+        updatedAt: new Date(),
+      })
       .where(eq(users.id, uid));
     await record(req, { action: 'user.password_change', entityType: 'user', entityId: uid });
     return reply.code(204).send();

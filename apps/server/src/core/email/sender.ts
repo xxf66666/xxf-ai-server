@@ -2,6 +2,19 @@ import nodemailer, { type Transporter } from 'nodemailer';
 import { env } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
 
+// HTML-escape any value before interpolating into the email template.
+// Today our templates only receive server-generated token URLs, but
+// keeping a consistent escape habit means a later change that passes
+// user input through won't silently open an HTML-injection foothole.
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function buildTransport(): Transporter | null {
   if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) return null;
   return nodemailer.createTransport({
@@ -78,13 +91,13 @@ export async function sendPasswordResetEmail(
           点下方按钮设置新密码 —— 链接 <b>60 分钟内有效</b>，且只能使用一次。
         </p>
         <p style="margin:24px 0">
-          <a href="${resetUrl}" style="display:inline-block;background:#0A0F1E;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500">
+          <a href="${escapeHtml(resetUrl)}" style="display:inline-block;background:#0A0F1E;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500">
             重置密码 / Reset password
           </a>
         </p>
         <p style="font-size:12px;color:#6b7280">
           按钮无法点击？把下面链接粘贴到浏览器地址栏：<br/>
-          <span style="word-break:break-all">${resetUrl}</span>
+          <span style="word-break:break-all">${escapeHtml(resetUrl)}</span>
         </p>
         <hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb"/>
         <p style="font-size:12px;color:#9ca3af;line-height:1.5">
@@ -126,13 +139,13 @@ export async function sendVerificationEmail(to: string, verifyUrl: string): Prom
           点下方按钮完成验证 —— 链接 <b>48 小时内有效</b>，且只能使用一次。
         </p>
         <p style="margin:24px 0">
-          <a href="${verifyUrl}" style="display:inline-block;background:#4f46e5;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500">
+          <a href="${escapeHtml(verifyUrl)}" style="display:inline-block;background:#4f46e5;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500">
             验证邮箱 / Verify email
           </a>
         </p>
         <p style="font-size:12px;color:#6b7280">
           按钮无法点击？把下面链接粘贴到浏览器地址栏：<br/>
-          <span style="word-break:break-all">${verifyUrl}</span>
+          <span style="word-break:break-all">${escapeHtml(verifyUrl)}</span>
         </p>
         <hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb"/>
         <p style="font-size:12px;color:#9ca3af;line-height:1.5">

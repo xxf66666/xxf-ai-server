@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
@@ -43,10 +44,52 @@ async function main() {
     disableRequestLogging: false,
     trustProxy: true,
     bodyLimit: 10 * 1024 * 1024, // 10 MB — room for large prompt payloads
+    // Use a UUID for the request id. Fastify's default is an auto-
+    // incrementing integer which is hard to grep across restarts and
+    // harder to correlate with client-side logs.
+    genReqId: (req) => {
+      const incoming = req.headers['x-request-id'];
+      if (typeof incoming === 'string' && incoming.length > 0 && incoming.length <= 128) {
+        return incoming;
+      }
+      return randomUUID();
+    },
   });
 
-  await app.register(helmet, { contentSecurityPolicy: false });
-  await app.register(cors, { origin: true, credentials: true });
+  // Echo the request id on every response so clients can cite it.
+  app.addHook('onSend', async (req, reply) => {
+    reply.header('x-request-id', req.id);
+  });
+
+  // CSP: web app is SSR'd by Next.js standalone; Instrument Serif from
+  // fonts.googleapis.com; recharts inlines styles → 'unsafe-inline' in
+  // style-src. connect-src allows same-origin API calls only.
+  await app.register(helmet, {
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        'default-src': ["'self'"],
+        'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],
+        'img-src': ["'self'", 'data:', 'blob:'],
+        'connect-src': ["'self'"],
+        'frame-ancestors': ["'none'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false, // Next.js static chunks trip this
+  });
+
+  // CORS: lock to our own origins. Echo origin: true + credentials true
+  // was a CSRF enabler — any site with a logged-in admin could fetch
+  // /admin/v1/* with the cookie.
+  const allowedOrigins = Array.from(
+    new Set([env.PUBLIC_WEB_URL, env.PUBLIC_API_URL].filter(Boolean)),
+  );
+  await app.register(cors, {
+    origin: allowedOrigins,
+    credentials: true,
+  });
   await app.register(sensible);
   await app.register(cookie);
   await app.register(jwt, {

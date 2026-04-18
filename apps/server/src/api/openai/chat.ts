@@ -11,7 +11,7 @@ import { applyClassification, classifyUpstream } from '../../core/accounts/healt
 import { isOpen, recordRequest } from '../../core/relay/breaker.js';
 import { getDispatcher } from '../../core/proxies/index.js';
 import { computeCost } from '../../core/pricing/index.js';
-import { debitForRequest } from '../../core/users/ledger.js';
+import { debitForRequestSafe } from '../../core/users/ledger.js';
 import {
   CLAUDE_MESSAGES_PATH,
   CLAUDE_UPSTREAM_BASE,
@@ -175,7 +175,7 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
             incrementWindowUsage(account.id, total).catch(() => {}),
             addWindowUsage(account.id, total).catch(() => {}),
             recordKeyUsage(apiKey.id, total).catch(() => {}),
-            debitForRequest(apiKey.id, costMud).catch(() => {}),
+            debitForRequestSafe(apiKey.id, costMud),
             recordRequest('claude', false),
           ]);
         }
@@ -205,7 +205,7 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
         incrementWindowUsage(account.id, total).catch(() => {}),
         addWindowUsage(account.id, total).catch(() => {}),
         recordKeyUsage(apiKey.id, total).catch(() => {}),
-        debitForRequest(apiKey.id, costMud).catch(() => {}),
+        debitForRequestSafe(apiKey.id, costMud),
         recordRequest('claude', false),
       ]);
       return reply.code(200).send(out);
