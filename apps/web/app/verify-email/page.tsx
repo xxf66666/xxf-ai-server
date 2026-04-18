@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { apiFetch } from '../../lib/api';
 import { AuthShell } from '../../components/AuthShell';
@@ -11,6 +11,14 @@ import { useT } from '../../lib/i18n/context';
 type State = 'loading' | 'ok' | 'fail';
 
 export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<AuthShell title="Verify your email">{null}</AuthShell>}>
+      <VerifyEmailInner />
+    </Suspense>
+  );
+}
+
+function VerifyEmailInner() {
   const params = useSearchParams();
   const token = params.get('token');
   const t = useT();
