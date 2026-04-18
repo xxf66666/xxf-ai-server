@@ -12,6 +12,7 @@ import {
   mintApiKey,
   revokeApiKey,
 } from '../../core/users/keys.js';
+import { consumeRedeemCode, listMyRedeemed } from '../../core/redeem/index.js';
 import { hashPassword, verifyPassword } from '../../core/users/passwords.js';
 import { getAllSettings } from '../../core/settings/index.js';
 import { record } from '../../core/audit/log.js';
@@ -33,6 +34,10 @@ const MintSchema = z.object({
 const PasswordSchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(8),
+});
+
+const RedeemSchema = z.object({
+  code: z.string().min(4).max(64),
 });
 
 function sessionUser(req: Parameters<typeof requireAdmin>[0]): string | null {
@@ -325,6 +330,55 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
     if (allow.length === 0) return { data: DEFAULT_MODELS };
     return {
       data: allow.map((id) => ({ id, provider: id.startsWith('claude-') ? 'claude' : 'openai', tier: null })),
+    };
+  });
+
+  app.post('/v1/console/redeem', async (req, reply) => {
+    const uid = sessionUser(req);
+    if (!uid) return reply.code(401).send({ error: 'unauth' });
+    const parsed = RedeemSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: parsed.error.message },
+      });
+    }
+    const result = await consumeRedeemCode(parsed.data.code, uid);
+    if (!result.ok) {
+      await record(req, {
+        action: 'redeem.attempt_failed',
+        entityType: 'redeem_code',
+        detail: { reason: result.reason },
+      });
+      const message =
+        result.reason === 'not_found'
+          ? 'redeem code not found'
+          : result.reason === 'revoked'
+            ? 'redeem code has been revoked'
+            : 'redeem code already used';
+      return reply
+        .code(400)
+        .send({ type: 'error', error: { type: 'invalid_request_error', message } });
+    }
+    await record(req, {
+      action: 'redeem.consume',
+      entityType: 'redeem_code',
+      detail: { valueMud: result.valueMud },
+    });
+    return { ok: true, valueMud: result.valueMud };
+  });
+
+  app.get('/v1/console/redeem/history', async (req, reply) => {
+    const uid = sessionUser(req);
+    if (!uid) return reply.code(401).send({ error: 'unauth' });
+    const rows = await listMyRedeemed(uid);
+    return {
+      data: rows.map((r) => ({
+        id: r.id,
+        codePreview: `${r.code.slice(0, 4)}…${r.code.slice(-4)}`,
+        valueMud: Number(r.valueMud),
+        redeemedAt: r.redeemedAt?.toISOString() ?? null,
+      })),
     };
   });
 

@@ -10,6 +10,7 @@ import {
   ListOrdered,
   LogOut,
   Settings as SettingsIcon,
+  Wallet,
 } from 'lucide-react';
 import { apiFetch } from '../../lib/api';
 import { clearBootstrapToken } from '../../lib/auth';
@@ -25,6 +26,7 @@ interface Me {
 
 const nav: Array<{ href: string; label: DictKey; icon: typeof LayoutDashboard }> = [
   { href: '/console/dashboard', label: 'console.nav.dashboard', icon: LayoutDashboard },
+  { href: '/console/wallet', label: 'nav.wallet', icon: Wallet },
   { href: '/console/keys', label: 'console.nav.keys', icon: KeyRound },
   { href: '/console/models', label: 'console.nav.models', icon: Boxes },
   { href: '/console/usage', label: 'console.nav.usage', icon: ListOrdered },

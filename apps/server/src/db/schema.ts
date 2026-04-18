@@ -152,6 +152,24 @@ export const modelPricing = pgTable('model_pricing', {
 export type ModelPricing = typeof modelPricing.$inferSelect;
 export type NewModelPricing = typeof modelPricing.$inferInsert;
 
+// Prepaid redeem codes ("卡密"). Admin mints a batch, hands them out
+// off-system; user redeems in /console/wallet to top up balance_mud.
+// Redemption is atomic — the UPDATE filters on `redeemed_by IS NULL AND
+// revoked = false` so two concurrent redemptions can't double-spend.
+export const redeemCodes = pgTable('redeem_codes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  code: varchar('code', { length: 32 }).notNull().unique(),
+  valueMud: bigint('value_mud', { mode: 'number' }).notNull(),
+  note: varchar('note', { length: 120 }),
+  createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  redeemedByUserId: uuid('redeemed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  redeemedAt: timestamp('redeemed_at', { withTimezone: true }),
+  revoked: boolean('revoked').default(false).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+export type RedeemCode = typeof redeemCodes.$inferSelect;
+export type NewRedeemCode = typeof redeemCodes.$inferInsert;
+
 // Invite codes: registration is gated. A valid, non-revoked, non-exhausted
 // code is required. Admin mints / resets / revokes via /admin/v1/invites.
 export const inviteCodes = pgTable('invite_codes', {
