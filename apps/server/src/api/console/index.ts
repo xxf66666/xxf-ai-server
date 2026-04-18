@@ -21,12 +21,17 @@ import { record } from '../../core/audit/log.js';
 import { requireAdmin } from '../../middleware/admin-auth.js';
 
 // Fallback model list when operator hasn't pinned one via settings.
+// Mirrors the 2026 Codex CLI + Claude Code catalogue.
 const DEFAULT_MODELS = [
   { id: 'claude-opus-4-7', provider: 'claude', tier: 'opus' },
   { id: 'claude-sonnet-4-6', provider: 'claude', tier: 'sonnet' },
   { id: 'claude-haiku-4-5-20251001', provider: 'claude', tier: 'haiku' },
-  { id: 'gpt-4o', provider: 'openai', tier: 'flagship' },
-  { id: 'gpt-4o-mini', provider: 'openai', tier: 'small' },
+  { id: 'gpt-5', provider: 'openai', tier: 'flagship' },
+  { id: 'gpt-5-mini', provider: 'openai', tier: 'mid' },
+  { id: 'gpt-5-nano', provider: 'openai', tier: 'small' },
+  { id: 'gpt-5-codex', provider: 'openai', tier: 'codex' },
+  { id: 'o3', provider: 'openai', tier: 'reasoning' },
+  { id: 'o3-mini', provider: 'openai', tier: 'small' },
 ];
 
 const MintSchema = z.object({

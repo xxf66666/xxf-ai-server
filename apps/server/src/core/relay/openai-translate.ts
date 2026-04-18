@@ -41,9 +41,22 @@ export interface AnthropicRequest {
   stream?: boolean;
 }
 
-// Default model mapping when client requests an OpenAI model name. Can be
-// overridden via `system_settings.models.allow` + a mapping table later.
+// Default model mapping when client requests an OpenAI model name.
+// Until a real ChatGPT upstream pool is attached, every GPT / o3 call
+// is translated onto a comparable Claude target:
+//   flagship → claude-opus-4-7
+//   mid      → claude-sonnet-4-6
+//   small    → claude-haiku-4-5-20251001
+// Can be overridden via `system_settings.models.allow` + mapping later.
 const DEFAULT_MODEL_MAP: Record<string, string> = {
+  // 2026 generation
+  'gpt-5': 'claude-opus-4-7',
+  'gpt-5-mini': 'claude-sonnet-4-6',
+  'gpt-5-nano': 'claude-haiku-4-5-20251001',
+  'gpt-5-codex': 'claude-sonnet-4-6',
+  'o3': 'claude-opus-4-7',
+  'o3-mini': 'claude-sonnet-4-6',
+  // 2024 models kept for clients that still pin to them
   'gpt-4o': 'claude-sonnet-4-6',
   'gpt-4o-mini': 'claude-haiku-4-5-20251001',
   'gpt-4-turbo': 'claude-sonnet-4-6',
@@ -57,6 +70,42 @@ export function resolveModel(requested: string | undefined): string {
   if (!requested) return 'claude-sonnet-4-6';
   if (requested.startsWith('claude-')) return requested;
   return DEFAULT_MODEL_MAP[requested] ?? 'claude-sonnet-4-6';
+}
+
+// ───────────────────────────────────────────────────────────────
+// OpenAI /v1/chat/completions → OpenAI Responses API translator.
+// Used when the call is routed to a ChatGPT Plus account instead of
+// translated onto Claude. Keep this minimal — the same "only what real
+// clients send" philosophy as the Anthropic translator above.
+export interface ResponsesRequest {
+  model: string;
+  input: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+  stream?: boolean;
+  temperature?: number;
+  top_p?: number;
+  max_output_tokens?: number;
+  stop?: string | string[];
+}
+
+export function translateChatToResponses(body: OpenAIRequest): ResponsesRequest {
+  const input = (body.messages ?? []).map((m) => ({
+    role: (m.role === 'tool' ? 'user' : m.role) as 'system' | 'user' | 'assistant',
+    content:
+      typeof m.content === 'string'
+        ? m.content
+        : (m.content ?? [])
+            .map((c) => (typeof c === 'object' && c?.text ? c.text : ''))
+            .join(''),
+  }));
+  return {
+    model: body.model ?? 'gpt-5',
+    input,
+    stream: body.stream,
+    temperature: body.temperature,
+    top_p: body.top_p,
+    max_output_tokens: body.max_tokens,
+    stop: body.stop,
+  };
 }
 
 export function translateRequest(body: OpenAIRequest): AnthropicRequest {

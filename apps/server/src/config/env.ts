@@ -47,6 +47,14 @@ const schema = z.object({
 
   CLAUDE_OAUTH_CLIENT_ID: z.string().optional(),
   CHATGPT_OAUTH_CLIENT_ID: z.string().optional(),
+  // When "1", /v1/chat/completions dispatches gpt-*/o3* calls to a
+  // real ChatGPT Plus subscriber account (requires provider=chatgpt
+  // account attached). Off by default — leaves the Claude-translation
+  // path intact for existing deploys.
+  CHATGPT_RELAY_ENABLED: z.string().optional(),
+  CHATGPT_AUTH_BASE: z.string().optional(),
+  CHATGPT_UPSTREAM_BASE: z.string().optional(),
+  CHATGPT_RESPONSES_PATH: z.string().optional(),
 
   EGRESS_PROXIES: z.string().optional(),
 });

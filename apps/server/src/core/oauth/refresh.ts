@@ -6,6 +6,7 @@ import { decryptAccessToken, decryptRefreshToken } from '../accounts/registry.js
 import { sealToken } from '../accounts/token.js';
 import { logger } from '../../utils/logger.js';
 import { refreshToken } from './claude.js';
+import { refreshChatgptToken } from './chatgpt.js';
 
 // Refresh if we're within this window of expiry. Gives us a cushion for
 // clock skew and in-flight requests.
@@ -53,7 +54,10 @@ export async function ensureFreshAccessToken(account: Account): Promise<string |
   }
 
   try {
-    const result = await refreshToken(refresh);
+    const result =
+      account.provider === 'chatgpt'
+        ? await refreshChatgptToken(refresh)
+        : await refreshToken(refresh);
     if (!result.ok) {
       logger.warn(
         { accountId: account.id, status: result.status, needsReauth: result.needsReauth },

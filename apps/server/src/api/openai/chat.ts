@@ -24,10 +24,12 @@ import { usageLog } from '../../db/schema.js';
 import { logger } from '../../utils/logger.js';
 import {
   resolveModel,
+  translateChatToResponses,
   translateRequest,
   translateResponse,
   translateStreamEvent,
 } from '../../core/relay/openai-translate.js';
+import { relayChatgptResponses } from '../../core/relay/chatgpt.js';
 
 function authFingerprint(auth: string | undefined): string {
   if (!auth) return 'anon';
@@ -72,6 +74,32 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
           },
         });
       }
+
+      // Dispatcher: when CHATGPT_RELAY_ENABLED is on and a chatgpt
+      // account pool exists, route gpt-*/o3* calls to a real ChatGPT
+      // Plus subscriber token. Otherwise fall through to the Claude
+      // translation layer (existing behaviour, zero regression if the
+      // flag is off).
+      if (
+        process.env.CHATGPT_RELAY_ENABLED === '1' &&
+        /^(gpt-|o3)/.test(requestedModel)
+      ) {
+        const chatAccount = await pickAccount({
+          provider: 'chatgpt',
+          ownerUserId: apiKey.userId,
+        });
+        if (chatAccount) {
+          const responsesBody = translateChatToResponses(body);
+          return relayChatgptResponses(req, reply, {
+            account: chatAccount,
+            apiKey,
+            requestedModel,
+            body: responsesBody as unknown as Record<string, unknown>,
+          });
+        }
+        // No chatgpt account available — fall through to Claude translation.
+      }
+
       const account = await pickAccount({ provider: 'claude', ownerUserId: apiKey.userId });
       if (!account) {
         return reply.code(503).send({
