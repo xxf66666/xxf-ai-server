@@ -48,6 +48,12 @@ export const users = pgTable('users', {
   emailVerified: boolean('email_verified').default(false).notNull(),
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+  lastLoginIp: varchar('last_login_ip', { length: 45 }),
+  // Brute-force guard. `failed_login_count` resets to 0 on successful
+  // login; when it crosses the threshold we set `locked_until` and reject
+  // further attempts until it expires (or an admin force-unlocks).
+  failedLoginCount: integer('failed_login_count').default(0).notNull(),
+  lockedUntil: timestamp('locked_until', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -65,6 +71,22 @@ export const emailVerificationTokens = pgTable('email_verification_tokens', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
+
+// Single-use password reset tokens. Same shape as email verification but
+// a distinct table so the two flows can have different TTL / rate limits
+// without tangling. 60-minute TTL (industry standard, shorter than 48h
+// verification because resets are higher-stakes).
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  token: varchar('token', { length: 64 }).notNull().unique(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 
 export const proxies = pgTable('proxies', {
   id: uuid('id').defaultRandom().primaryKey(),

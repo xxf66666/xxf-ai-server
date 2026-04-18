@@ -46,6 +46,57 @@ async function send(opts: {
   }
 }
 
+export async function sendPasswordResetEmail(
+  to: string,
+  resetUrl: string,
+): Promise<SendResult> {
+  const subject = '重置你的 Nexa 密码 / Reset your password';
+  const text = [
+    `你好，`,
+    ``,
+    `有人（希望是你本人）请求重置 Nexa 账号的密码。`,
+    `点下面链接设置新密码（60 分钟内有效）：`,
+    resetUrl,
+    ``,
+    `不是你？忽略这封邮件即可，密码不会改变。`,
+    ``,
+    `---`,
+    `Hello,`,
+    ``,
+    `Someone (hopefully you) requested a password reset for your Nexa account.`,
+    `Click the link below to set a new password (valid for 60 minutes):`,
+    resetUrl,
+    ``,
+    `Not you? Just ignore this message; your password will not change.`,
+  ].join('\n');
+  const html = `
+    <div style="font-family:system-ui,-apple-system,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1f2937">
+      <div style="border-radius:12px;border:1px solid #e5e7eb;padding:32px;background:#fff">
+        <div style="font-weight:600;font-size:18px;margin-bottom:8px">重置密码 / Reset password</div>
+        <p style="font-size:14px;line-height:1.6;color:#4b5563">
+          有人（希望是你本人）请求重置 <b>Nexa</b> 账号的密码。
+          点下方按钮设置新密码 —— 链接 <b>60 分钟内有效</b>，且只能使用一次。
+        </p>
+        <p style="margin:24px 0">
+          <a href="${resetUrl}" style="display:inline-block;background:#0A0F1E;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500">
+            重置密码 / Reset password
+          </a>
+        </p>
+        <p style="font-size:12px;color:#6b7280">
+          按钮无法点击？把下面链接粘贴到浏览器地址栏：<br/>
+          <span style="word-break:break-all">${resetUrl}</span>
+        </p>
+        <hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb"/>
+        <p style="font-size:12px;color:#9ca3af;line-height:1.5">
+          不是你本人操作？忽略这封邮件即可，密码不会改变。<br/>
+          — Nexa
+        </p>
+      </div>
+    </div>
+  `;
+  return send({ to, subject, html, text });
+}
+
 export async function sendVerificationEmail(to: string, verifyUrl: string): Promise<SendResult> {
   const subject = '验证你的 Nexa 邮箱 / Verify your email';
   const text = [

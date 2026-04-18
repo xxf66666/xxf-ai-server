@@ -33,6 +33,7 @@ export const en = {
   'nav.keys': 'API keys',
   'nav.proxies': 'Proxies',
   'nav.stats': 'Stats',
+  'nav.audit': 'Audit log',
   'nav.settings': 'Settings',
   'nav.signout': 'Sign out',
   'nav.console': 'admin console',
@@ -115,6 +116,9 @@ export const en = {
   'users.confirm.suspend':
     'Suspend {email}? Their login and API keys will stop working immediately.',
   'users.empty': 'No users match this filter.',
+  'users.locked.badge': 'locked',
+  'users.locked.title': 'Temporarily locked after too many failed sign-ins',
+  'users.action.unlock': 'Unlock',
 
   // --- keys ---
   'keys.title': 'API keys',
@@ -511,6 +515,52 @@ export const en = {
   'login.suspended.title': 'Account suspended',
   'login.suspended.desc':
     'This account has been disabled by an administrator. Contact the operator if you think this is a mistake.',
+  'login.locked.title': 'Too many failed attempts',
+  'login.locked.desc':
+    'Sign-in is temporarily blocked. Try again in about {minutes} minute(s), or reset your password.',
+  'login.forgot': 'Forgot your password?',
+
+  // forgot password
+  'forgot.title': 'Reset your password',
+  'forgot.sub': 'Enter your account email — we\'ll send a reset link.',
+  'forgot.submit': 'Send reset link',
+  'forgot.sending': 'sending…',
+  'forgot.sent.title': 'Check your email',
+  'forgot.sent.sub': 'If the email exists, a reset link is on its way.',
+  'forgot.sent.heading': 'Reset link sent',
+  'forgot.sent.desc':
+    'We sent a reset link to {email}. The link is valid for 60 minutes. Check your spam folder if you don\'t see it.',
+  'forgot.sent.hint': 'For security, we don\'t disclose whether the email is registered.',
+  'forgot.backToLogin': '← Back to sign-in',
+
+  // reset password
+  'reset.title': 'Set a new password',
+  'reset.sub': 'Choose a strong password — at least 8 chars.',
+  'reset.newPassword': 'New password',
+  'reset.submit': 'Update password',
+  'reset.submitting': 'updating…',
+  'reset.done.title': 'Password updated',
+  'reset.done.sub': 'Sign in with your new password.',
+  'reset.done.msg': 'Your password has been changed. You can now sign in.',
+  'reset.done.cta': 'Go to sign-in',
+  'reset.err.noToken': 'Missing or invalid reset link',
+  'reset.err.noTokenDesc':
+    'This reset link is invalid or incomplete. Request a new one below.',
+  'reset.requestNew': 'Request a new reset link',
+
+  // audit log
+  'audit.title': 'Audit log',
+  'audit.subtitle': 'All privileged + account events. Refreshes every 20s.',
+  'audit.refresh': 'Refresh',
+  'audit.filter.action': 'Action',
+  'audit.filter.actor': 'Actor email',
+  'audit.filter.all': 'All actions',
+  'audit.col.time': 'Time',
+  'audit.col.actor': 'Actor',
+  'audit.col.action': 'Action',
+  'audit.col.entity': 'Entity',
+  'audit.col.detail': 'Detail',
+  'audit.empty': 'No events match the current filters.',
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -547,6 +597,7 @@ export const zh: Dict = {
   'nav.keys': 'API 密钥',
   'nav.proxies': '出口代理',
   'nav.stats': '统计',
+  'nav.audit': '审计日志',
   'nav.settings': '设置',
   'nav.signout': '退出',
   'nav.console': '管理后台',
@@ -628,6 +679,9 @@ export const zh: Dict = {
     '强制激活 {email}？这会跳过邮箱验证，仅用于邮箱退信但本人可信的情况。',
   'users.confirm.suspend': '禁用 {email}？登录和 API Key 会立刻失效。',
   'users.empty': '该筛选下没有用户。',
+  'users.locked.badge': '已锁定',
+  'users.locked.title': '登录失败次数过多，已被临时锁定',
+  'users.action.unlock': '解锁',
 
   // --- keys ---
   'keys.title': 'API 密钥',
@@ -1012,4 +1066,47 @@ export const zh: Dict = {
   'login.pending.resent': '已重发 ✓',
   'login.suspended.title': '账号已被禁用',
   'login.suspended.desc': '管理员已禁用此账号，如有异议请联系运营方。',
+  'login.locked.title': '失败次数过多',
+  'login.locked.desc': '登录被临时锁定，约 {minutes} 分钟后再试，或用"忘记密码"重置。',
+  'login.forgot': '忘记密码？',
+
+  // forgot password
+  'forgot.title': '重置密码',
+  'forgot.sub': '输入你的账号邮箱，我们会发重置链接过去。',
+  'forgot.submit': '发送重置链接',
+  'forgot.sending': '发送中…',
+  'forgot.sent.title': '查收邮件',
+  'forgot.sent.sub': '如果邮箱已注册，重置链接已经在路上了。',
+  'forgot.sent.heading': '重置链接已发送',
+  'forgot.sent.desc': '已向 {email} 发送重置链接，60 分钟内有效。没收到就翻下垃圾箱。',
+  'forgot.sent.hint': '出于安全考虑，不会告诉你该邮箱是否真的注册过。',
+  'forgot.backToLogin': '← 返回登录',
+
+  // reset password
+  'reset.title': '设置新密码',
+  'reset.sub': '至少 8 位，建议混合字母数字符号。',
+  'reset.newPassword': '新密码',
+  'reset.submit': '更新密码',
+  'reset.submitting': '更新中…',
+  'reset.done.title': '密码已更新',
+  'reset.done.sub': '用新密码登录即可。',
+  'reset.done.msg': '密码已修改，去登录吧。',
+  'reset.done.cta': '去登录',
+  'reset.err.noToken': '重置链接无效或缺失',
+  'reset.err.noTokenDesc': '这个重置链接不完整或已失效，请重新申请。',
+  'reset.requestNew': '重新申请重置链接',
+
+  // audit log
+  'audit.title': '审计日志',
+  'audit.subtitle': '权限操作和账号事件，每 20 秒刷新。',
+  'audit.refresh': '刷新',
+  'audit.filter.action': '操作类型',
+  'audit.filter.actor': '操作人邮箱',
+  'audit.filter.all': '全部类型',
+  'audit.col.time': '时间',
+  'audit.col.actor': '操作人',
+  'audit.col.action': '操作',
+  'audit.col.entity': '实体',
+  'audit.col.detail': '详情',
+  'audit.empty': '当前筛选下没有事件。',
 };

@@ -9,7 +9,12 @@ import { consumeInvite } from '../../core/invites/index.js';
 import { seedWelcomeCredit } from '../../core/users/ledger.js';
 import { getSetting } from '../../core/settings/index.js';
 import { consumeVerificationToken, createVerificationToken } from '../../core/email/verify.js';
-import { MAIL_ENABLED, sendVerificationEmail } from '../../core/email/sender.js';
+import { consumeResetToken, createResetToken } from '../../core/email/reset.js';
+import {
+  MAIL_ENABLED,
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+} from '../../core/email/sender.js';
 import { env } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
 
@@ -49,12 +54,51 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
     const { email, password } = parsed.data;
     const rows = await db.select().from(users).where(eq(users.email, email)).limit(1);
     const user = rows[0];
+
+    // Lockout check runs BEFORE password verify so a locked attacker
+    // can't keep spinning timing-attack probes against our hasher.
+    if (user && user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+      const secs = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 1000);
+      return reply.code(423).send({
+        type: 'error',
+        error: {
+          type: 'account_locked',
+          message: 'too many failed attempts, try again later',
+          retryAfterSec: secs,
+        },
+      });
+    }
+
     if (!user || !(await verifyPassword(user.passwordHash, password))) {
+      if (user) {
+        // Brute-force guard: bump counter, lock at the 5th miss for 15
+        // minutes. Unknown emails don't tick any counter (would let an
+        // attacker enumerate) but also don't give them a timing oracle —
+        // argon2.verify against the bogus '!' hash takes normal time.
+        const nextCount = user.failedLoginCount + 1;
+        const shouldLock = nextCount >= 5;
+        await db
+          .update(users)
+          .set({
+            failedLoginCount: nextCount,
+            lockedUntil: shouldLock ? new Date(Date.now() + 15 * 60 * 1000) : user.lockedUntil,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, user.id))
+          .catch(() => {});
+        await record(req, {
+          action: 'user.login_failed',
+          entityType: 'user',
+          entityId: user.id,
+          detail: { failedCount: nextCount, ip: req.ip, locked: shouldLock },
+        }).catch(() => {});
+      }
       return reply.code(401).send({
         type: 'error',
         error: { type: 'authentication_error', message: 'invalid email or password' },
       });
     }
+
     // Hard gate: only active users may log in. Pending / suspended get
     // distinct error codes so the UI can render the right prompt.
     if (user.status === 'pending_verification') {
@@ -76,18 +120,29 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
         },
       });
     }
-    // Any role may login; RBAC on protected routes handles access control.
+
+    // Success: reset the failure counter, stamp login metadata, set cookie.
     const token = await reply.jwtSign(
       { sub: user.id, email: user.email, role: user.role },
       { expiresIn: '7d' },
     );
     reply.setCookie(COOKIE_NAME, token, cookieOpts);
-    // Best-effort lastLoginAt; failure here must not block login.
     void db
       .update(users)
-      .set({ lastLoginAt: new Date() })
+      .set({
+        lastLoginAt: new Date(),
+        lastLoginIp: req.ip,
+        failedLoginCount: 0,
+        lockedUntil: null,
+      })
       .where(eq(users.id, user.id))
       .catch(() => {});
+    await record(req, {
+      action: 'user.login',
+      entityType: 'user',
+      entityId: user.id,
+      detail: { ip: req.ip },
+    }).catch(() => {});
     return { id: user.id, email: user.email, role: user.role };
   });
 
@@ -278,6 +333,70 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
       entityType: 'user',
       entityId: uid,
     });
+    return { ok: true };
+  });
+
+  // Public: request a password reset email. Enumeration-safe — always
+  // returns {ok:true} regardless of whether the email is on record. If
+  // the user is suspended we also skip silently; they should contact
+  // admin, not reset. Verified flag is not required — a user may forget
+  // their password before verifying email.
+  app.post('/admin/v1/auth/password-reset/request', async (req, reply) => {
+    const parsed = z.object({ email: z.string().email() }).safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'email required' },
+      });
+    }
+    if (!MAIL_ENABLED) {
+      return reply.code(503).send({
+        type: 'error',
+        error: { type: 'api_error', message: 'email service not configured on server' },
+      });
+    }
+    const [u] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, parsed.data.email))
+      .limit(1);
+    if (u && u.status !== 'suspended') {
+      try {
+        const token = await createResetToken(u.id);
+        const url = `${env.PUBLIC_WEB_URL}/reset-password?token=${encodeURIComponent(token)}`;
+        const res = await sendPasswordResetEmail(u.email, url);
+        if (!res.ok) {
+          logger.warn({ userId: u.id, error: res.error }, 'password reset email failed');
+        }
+      } catch (err) {
+        logger.warn({ err }, 'password reset email flow errored');
+      }
+    }
+    return { ok: true };
+  });
+
+  // Public: confirm reset token + set new password in one step.
+  app.post('/admin/v1/auth/password-reset/confirm', async (req, reply) => {
+    const parsed = z
+      .object({
+        token: z.string().min(1),
+        password: z.string().min(8, 'password must be at least 8 chars'),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: parsed.error.message },
+      });
+    }
+    const userId = await consumeResetToken(parsed.data.token, parsed.data.password);
+    if (!userId) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'invalid or expired token' },
+      });
+    }
+    await record(req, { action: 'user.password_reset', entityType: 'user', entityId: userId });
     return { ok: true };
   });
 

@@ -43,6 +43,13 @@
       "when": 1776483879473,
       "tag": "0005_flimsy_frog_thor",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776484783336,
+      "tag": "0006_thankful_human_cannonball",
+      "breakpoints": true
     }
   ]
 }

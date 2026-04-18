@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { CheckCircle2, Clock, ShieldOff } from 'lucide-react';
+import { CheckCircle2, Clock, Lock, ShieldOff } from 'lucide-react';
 import { apiFetch } from '../../../lib/api';
 import { useT } from '../../../lib/i18n/context';
 import type { DictKey } from '../../../lib/i18n/dict';
@@ -18,6 +18,10 @@ interface User {
   balanceMud: number;
   spentMud: number;
   lastLoginAt: string | null;
+  lastLoginIp: string | null;
+  failedLoginCount: number;
+  lockedUntil: string | null;
+  locked: boolean;
   createdAt: string;
 }
 
@@ -60,6 +64,14 @@ export default function UsersPage() {
       apiFetch(`/admin/v1/users/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({ status }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  });
+  const unlock = useMutation({
+    mutationFn: (id: string) =>
+      apiFetch(`/admin/v1/users/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ unlock: true }),
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
   });
@@ -186,7 +198,19 @@ export default function UsersPage() {
                       : 'text-emerald-700';
               return (
                 <tr key={u.id} className="border-t border-border">
-                  <td className="px-4 py-2 font-mono text-xs">{u.email}</td>
+                  <td className="px-4 py-2 font-mono text-xs">
+                    <div className="flex items-center gap-2">
+                      <span>{u.email}</span>
+                      {u.locked && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700"
+                          title={t('users.locked.title')}
+                        >
+                          <Lock className="h-2.5 w-2.5" /> {t('users.locked.badge')}
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-2">{u.role}</td>
                   <td className="px-4 py-2"><StatusBadge status={u.status} /></td>
                   <td className={`px-4 py-2 text-right font-mono text-xs ${balClass}`}>
@@ -196,12 +220,32 @@ export default function UsersPage() {
                     {usd.format(mudToUsd(u.spentMud))}
                   </td>
                   <td className="px-4 py-2 text-xs text-muted-foreground">
-                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : t('common.dash')}
+                    {u.lastLoginAt ? (
+                      <div>
+                        <div>{new Date(u.lastLoginAt).toLocaleString()}</div>
+                        {u.lastLoginIp && (
+                          <div className="font-mono text-[10px] text-muted-foreground/70">
+                            {u.lastLoginIp}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      t('common.dash')
+                    )}
                   </td>
                   <td className="px-4 py-2 text-xs text-muted-foreground">
                     {new Date(u.createdAt).toLocaleString()}
                   </td>
                   <td className="space-x-3 whitespace-nowrap px-4 py-2 text-right">
+                    {u.locked && (
+                      <button
+                        type="button"
+                        onClick={() => unlock.mutate(u.id)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        {t('users.action.unlock')}
+                      </button>
+                    )}
                     {u.status === 'pending_verification' && (
                       <button
                         type="button"

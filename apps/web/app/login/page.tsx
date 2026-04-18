@@ -17,7 +17,9 @@ interface Me {
   role: 'admin' | 'contributor' | 'consumer';
 }
 
-type ApiBody = { error?: { type?: string; message?: string; email?: string } };
+type ApiBody = {
+  error?: { type?: string; message?: string; email?: string; retryAfterSec?: number };
+};
 
 function landingFor(role: Me['role']): string {
   return role === 'consumer' ? '/console/dashboard' : '/dashboard';
@@ -32,6 +34,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<{ email: string } | null>(null);
   const [suspended, setSuspended] = useState(false);
+  const [lockedFor, setLockedFor] = useState<number | null>(null);
   const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
 
   useEffect(() => {
@@ -45,6 +48,7 @@ export default function LoginPage() {
     setError(null);
     setPending(null);
     setSuspended(false);
+    setLockedFor(null);
     setSubmitting(true);
     try {
       let role: Me['role'] = 'consumer';
@@ -71,6 +75,10 @@ export default function LoginPage() {
         }
         if (etype === 'account_suspended') {
           setSuspended(true);
+          return;
+        }
+        if (etype === 'account_locked') {
+          setLockedFor(body?.error?.retryAfterSec ?? 900);
           return;
         }
       }
@@ -190,6 +198,21 @@ export default function LoginPage() {
           </div>
         )}
 
+        {lockedFor !== null && (
+          <div className="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 p-3 text-xs text-red-800">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <div className="font-medium">{t('login.locked.title')}</div>
+              <div className="mt-1">
+                {t('login.locked.desc').replace(
+                  '{minutes}',
+                  String(Math.max(1, Math.ceil(lockedFor / 60))),
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             {error}
@@ -205,11 +228,21 @@ export default function LoginPage() {
         </button>
 
         {mode === 'password' && (
-          <div className="text-center text-xs text-muted-foreground">
-            {t('login.noAccount')}{' '}
-            <Link href={'/register' as never} className="text-primary hover:underline">
-              {t('login.register')}
-            </Link>
+          <div className="space-y-2 text-center text-xs text-muted-foreground">
+            <div>
+              <Link
+                href={'/forgot-password' as never}
+                className="text-primary hover:underline"
+              >
+                {t('login.forgot')}
+              </Link>
+            </div>
+            <div>
+              {t('login.noAccount')}{' '}
+              <Link href={'/register' as never} className="text-primary hover:underline">
+                {t('login.register')}
+              </Link>
+            </div>
           </div>
         )}
       </form>

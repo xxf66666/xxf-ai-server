@@ -23,6 +23,10 @@ const UpdateSchema = z.object({
   // 'active'  — unlock / force-verify without email round-trip
   // 'suspended' — disable access (login + API) without deleting records
   status: z.enum(['pending_verification', 'active', 'suspended']).optional(),
+  // Clear brute-force lockout without touching status/password. Admin
+  // use this when a user tells support "I forgot my password and got
+  // locked out" — cheaper than walking them through the reset flow.
+  unlock: z.boolean().optional(),
 });
 
 const BalanceSchema = z.object({
@@ -32,6 +36,9 @@ const BalanceSchema = z.object({
 });
 
 function toDto(u: User) {
+  const now = Date.now();
+  const lockedUntil = u.lockedUntil?.toISOString() ?? null;
+  const locked = Boolean(u.lockedUntil && u.lockedUntil.getTime() > now);
   return {
     id: u.id,
     email: u.email,
@@ -41,6 +48,10 @@ function toDto(u: User) {
     balanceMud: Number(u.balanceMud ?? 0),
     spentMud: Number(u.spentMud ?? 0),
     lastLoginAt: u.lastLoginAt ? u.lastLoginAt.toISOString() : null,
+    lastLoginIp: u.lastLoginIp ?? null,
+    failedLoginCount: u.failedLoginCount,
+    lockedUntil,
+    locked,
     createdAt: u.createdAt.toISOString(),
   };
 }
@@ -112,6 +123,10 @@ export async function registerAdminUsers(app: FastifyInstance): Promise<void> {
         patch.emailVerifiedAt = new Date();
       }
     }
+    if (parsed.data.unlock) {
+      patch.failedLoginCount = 0;
+      patch.lockedUntil = null;
+    }
     await db.update(users).set(patch).where(eq(users.id, id));
     const [row] = await db.select().from(users).where(eq(users.id, id)).limit(1);
     if (!row) return reply.code(404).send({ error: 'not_found' });
@@ -123,6 +138,7 @@ export async function registerAdminUsers(app: FastifyInstance): Promise<void> {
         role: parsed.data.role ?? undefined,
         status: parsed.data.status ?? undefined,
         passwordChanged: Boolean(parsed.data.password),
+        unlocked: Boolean(parsed.data.unlock),
       },
     });
     return toDto(row);
