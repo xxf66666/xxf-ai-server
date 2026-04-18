@@ -11,6 +11,12 @@ import { applyClassification, classifyUpstream, type Classification } from './he
 import { getDispatcher } from '../proxies/index.js';
 import { logger } from '../../utils/logger.js';
 
+// For provider=chatgpt, a successful refresh is the strongest signal we
+// can get without hitting a real Codex endpoint (which isn't publicly
+// documented, see ADR). We classify a fresh token as 'ok' and skip
+// the Anthropic round-trip — otherwise we'd always 401 against
+// api.anthropic.com and misclassify the account as needs_reauth.
+
 export interface ProbeResult {
   ok: boolean;
   status: number;
@@ -32,6 +38,23 @@ export async function probeAccount(account: Account): Promise<ProbeResult> {
   if (!accessToken) {
     await stampProbe(account.id, false);
     return { ok: false, status: 0, classification: 'needs_reauth', latencyMs: 0 };
+  }
+
+  // Provider-specific probe target. For claude we hit Messages API; for
+  // chatgpt we skip the upstream round-trip — a successful token
+  // refresh is the only meaningful signal without access to Codex's
+  // internal endpoint.
+  if (account.provider === 'chatgpt') {
+    await Promise.all([
+      applyClassification(account, { kind: 'ok' }),
+      stampProbe(account.id, true),
+    ]);
+    return {
+      ok: true,
+      status: 200,
+      classification: 'ok',
+      latencyMs: Date.now() - startedAt,
+    };
   }
 
   const dispatcher = await getDispatcher(account.proxyId);
