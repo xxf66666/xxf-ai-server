@@ -19,6 +19,7 @@ import { record } from '../../core/audit/log.js';
 import { db } from '../../db/client.js';
 import { accounts, type Account } from '../../db/schema.js';
 import { isAdmin, requireRole, sessionUserId } from '../../middleware/rbac.js';
+import { getWindowUsage, PLAN_WINDOW_LIMIT } from '../../core/accounts/quota.js';
 
 const AttachSchema = z.object({
   provider: z.enum(PROVIDERS),
@@ -31,33 +32,45 @@ const AttachSchema = z.object({
   tokenExpiresAt: z.string().datetime().optional(),
 });
 
-function toDto(a: Account) {
+function toDto(a: Account, liveWindowUsed: number = 0) {
+  const plan = a.plan as AccountPlan;
+  const windowLimit = PLAN_WINDOW_LIMIT[plan] ?? null;
   return {
     id: a.id,
     provider: a.provider as Provider,
-    plan: a.plan as AccountPlan,
+    plan,
     label: a.label,
     ownerUserId: a.ownerUserId,
     shared: a.shared,
     status: a.status,
-    windowTokensUsed: a.windowTokensUsed,
+    windowTokensUsed: Number(a.windowTokensUsed ?? 0),
+    windowTokensUsedLive: liveWindowUsed,
+    windowLimit,
+    tokenExpiresAt: a.tokenExpiresAt?.toISOString() ?? null,
     lastUsedAt: a.lastUsedAt?.toISOString() ?? null,
+    lastProbeAt: a.lastProbeAt?.toISOString() ?? null,
+    lastProbeOk: a.lastProbeOk,
     coolingUntil: a.coolingUntil?.toISOString() ?? null,
     proxyId: a.proxyId,
     createdAt: a.createdAt.toISOString(),
   };
 }
 
+async function toDtoList(rows: Account[]) {
+  const live = await Promise.all(rows.map((a) => getWindowUsage(a.id).catch(() => 0)));
+  return rows.map((a, i) => toDto(a, live[i] ?? 0));
+}
+
 export async function registerAdminAccounts(app: FastifyInstance): Promise<void> {
   app.get('/admin/v1/accounts', async (req) => {
     if (isAdmin(req)) {
       const rows = await listAccounts();
-      return { data: rows.map(toDto) };
+      return { data: await toDtoList(rows) };
     }
     const uid = sessionUserId(req);
     if (!uid) return { data: [] };
     const rows = await db.select().from(accounts).where(eq(accounts.ownerUserId, uid));
-    return { data: rows.map(toDto) };
+    return { data: await toDtoList(rows) };
   });
 
   app.post('/admin/v1/accounts', async (req, reply) => {
@@ -84,7 +97,7 @@ export async function registerAdminAccounts(app: FastifyInstance): Promise<void>
       entityId: account.id,
       detail: { provider: account.provider, plan: account.plan, shared: account.shared },
     });
-    return reply.code(201).send(toDto(account));
+    return reply.code(201).send(toDto(account, 0));
   });
 
   app.patch('/admin/v1/accounts/:id', async (req, reply) => {
@@ -118,7 +131,8 @@ export async function registerAdminAccounts(app: FastifyInstance): Promise<void>
     }
     const updated = await getAccount(id);
     if (!updated) return reply.code(404).send({ error: 'not_found' });
-    return toDto(updated);
+    const live = await getWindowUsage(updated.id).catch(() => 0);
+    return toDto(updated, live);
   });
 
   app.delete('/admin/v1/accounts/:id', async (req, reply) => {
