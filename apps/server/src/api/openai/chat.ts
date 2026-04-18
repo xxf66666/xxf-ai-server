@@ -51,7 +51,7 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
     },
     async (req, reply) => {
       const body = req.body as Parameters<typeof translateRequest>[0];
-      const requestedModel = body?.model ?? 'gpt-4o';
+      const requestedModel = body?.model ?? 'gpt-5';
       const anthropicBody = translateRequest(body);
       const streaming = anthropicBody.stream === true;
       const startedAt = Date.now();
@@ -63,7 +63,7 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
       }
 
       const apiKey = req.apiKey!;
-      // Whitelist is checked against the user-requested model (gpt-4o
+      // Whitelist is checked against the user-requested model (gpt-5
       // etc.), NOT the translated claude-* target. Consumers think in
       // OpenAI model ids when they scope a key.
       if (!keyAllowsModel(apiKey, requestedModel)) {

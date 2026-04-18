@@ -71,6 +71,13 @@
       "when": 1776511200000,
       "tag": "0009_gpt5_pricing_seed",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776513000000,
+      "tag": "0010_drop_legacy_openai",
+      "breakpoints": true
     }
   ]
 }

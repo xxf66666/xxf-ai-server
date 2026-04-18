@@ -47,12 +47,12 @@ export default function ApiDocs() {
   -H "Authorization: Bearer sk-xxf-..." \\
   -H "content-type: application/json" \\
   -d '{
-    "model": "gpt-4o",
+    "model": "gpt-5",
     "messages": [
       {"role": "user", "content": "hello"}
     ]
   }'`}</Code>
-      <p>模型名自动映射（gpt-4o → claude-sonnet-4-6），也可传 <code>claude-*</code> 原生 ID。</p>
+      <p>模型名自动映射（gpt-5 → claude-opus-4-7），也可传 <code>claude-*</code> 原生 ID。</p>
 
       <H2>错误响应</H2>
       <p>所有错误都返 Anthropic 风格信封：</p>

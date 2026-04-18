@@ -8,9 +8,11 @@ import {
 
 describe('resolveModel', () => {
   it('maps known OpenAI names to Claude', () => {
-    expect(resolveModel('gpt-4o')).toBe('claude-sonnet-4-6');
-    expect(resolveModel('gpt-4o-mini')).toBe('claude-haiku-4-5-20251001');
-    expect(resolveModel('o1')).toBe('claude-opus-4-7');
+    expect(resolveModel('gpt-5')).toBe('claude-opus-4-7');
+    expect(resolveModel('gpt-5-mini')).toBe('claude-sonnet-4-6');
+    expect(resolveModel('gpt-5-nano')).toBe('claude-haiku-4-5-20251001');
+    expect(resolveModel('o3')).toBe('claude-opus-4-7');
+    expect(resolveModel('o3-mini')).toBe('claude-sonnet-4-6');
   });
 
   it('passes claude-* names through', () => {
@@ -27,7 +29,7 @@ describe('resolveModel', () => {
 describe('translateRequest', () => {
   it('collapses system messages into Anthropic.system', () => {
     const out = translateRequest({
-      model: 'gpt-4o',
+      model: 'gpt-5',
       messages: [
         { role: 'system', content: 'be terse' },
         { role: 'system', content: 'and polite' },
@@ -40,7 +42,7 @@ describe('translateRequest', () => {
 
   it('preserves user/assistant message ordering', () => {
     const out = translateRequest({
-      model: 'gpt-4o',
+      model: 'gpt-5',
       messages: [
         { role: 'user', content: 'hi' },
         { role: 'assistant', content: 'hello' },
@@ -56,7 +58,7 @@ describe('translateRequest', () => {
 
   it('extracts text from structured content parts', () => {
     const out = translateRequest({
-      model: 'gpt-4o',
+      model: 'gpt-5',
       messages: [
         {
           role: 'user',
@@ -73,7 +75,7 @@ describe('translateRequest', () => {
 
   it('maps stop → stop_sequences and caps max_tokens', () => {
     const out = translateRequest({
-      model: 'gpt-4o',
+      model: 'gpt-5',
       max_tokens: 999_999,
       stop: ['\\n', 'END'],
       messages: [{ role: 'user', content: 'hi' }],
@@ -84,7 +86,7 @@ describe('translateRequest', () => {
 
   it('forwards temperature and top_p', () => {
     const out = translateRequest({
-      model: 'gpt-4o',
+      model: 'gpt-5',
       temperature: 0.3,
       top_p: 0.9,
       messages: [{ role: 'user', content: 'hi' }],
@@ -95,7 +97,7 @@ describe('translateRequest', () => {
 
   it('sets stream flag when requested', () => {
     const out = translateRequest({
-      model: 'gpt-4o',
+      model: 'gpt-5',
       stream: true,
       messages: [{ role: 'user', content: 'hi' }],
     });
@@ -115,7 +117,7 @@ describe('translateResponse', () => {
         usage: { input_tokens: 5, output_tokens: 7 },
         stop_reason: 'end_turn',
       },
-      'gpt-4o',
+      'gpt-5',
     ) as {
       id: string;
       object: string;
@@ -124,7 +126,7 @@ describe('translateResponse', () => {
       usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
     };
     expect(out.object).toBe('chat.completion');
-    expect(out.model).toBe('gpt-4o');
+    expect(out.model).toBe('gpt-5');
     const choice = out.choices[0]!;
     expect(choice.message.content).toBe('hello world');
     expect(choice.finish_reason).toBe('stop');
@@ -134,14 +136,14 @@ describe('translateResponse', () => {
   it('maps max_tokens stop reason to length', () => {
     const out = translateResponse(
       { id: 'msg_1', stop_reason: 'max_tokens' },
-      'gpt-4o',
+      'gpt-5',
     ) as { choices: Array<{ finish_reason: string }> };
     expect(out.choices[0]!.finish_reason).toBe('length');
   });
 });
 
 describe('translateStreamEvent', () => {
-  const ctx = { id: 'id-1', model: 'gpt-4o' };
+  const ctx = { id: 'id-1', model: 'gpt-5' };
 
   it('emits a content delta for each content_block_delta', () => {
     const chunks = translateStreamEvent(

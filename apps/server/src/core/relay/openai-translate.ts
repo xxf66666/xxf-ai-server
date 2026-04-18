@@ -42,28 +42,20 @@ export interface AnthropicRequest {
 }
 
 // Default model mapping when client requests an OpenAI model name.
-// Until a real ChatGPT upstream pool is attached, every GPT / o3 call
-// is translated onto a comparable Claude target:
-//   flagship → claude-opus-4-7
-//   mid      → claude-sonnet-4-6
-//   small    → claude-haiku-4-5-20251001
+// 2026 catalogue only — gpt-4 / gpt-3.5 / o1 have been retired.
+// When no ChatGPT upstream pool is attached, each OpenAI id translates
+// to the nearest Claude tier:
+//   flagship (gpt-5, o3) → claude-opus-4-7
+//   mid      (gpt-5-mini, gpt-5-codex, o3-mini) → claude-sonnet-4-6
+//   small    (gpt-5-nano) → claude-haiku-4-5-20251001
 // Can be overridden via `system_settings.models.allow` + mapping later.
 const DEFAULT_MODEL_MAP: Record<string, string> = {
-  // 2026 generation
   'gpt-5': 'claude-opus-4-7',
   'gpt-5-mini': 'claude-sonnet-4-6',
   'gpt-5-nano': 'claude-haiku-4-5-20251001',
   'gpt-5-codex': 'claude-sonnet-4-6',
   'o3': 'claude-opus-4-7',
   'o3-mini': 'claude-sonnet-4-6',
-  // 2024 models kept for clients that still pin to them
-  'gpt-4o': 'claude-sonnet-4-6',
-  'gpt-4o-mini': 'claude-haiku-4-5-20251001',
-  'gpt-4-turbo': 'claude-sonnet-4-6',
-  'gpt-4': 'claude-sonnet-4-6',
-  'gpt-3.5-turbo': 'claude-haiku-4-5-20251001',
-  'o1': 'claude-opus-4-7',
-  'o1-mini': 'claude-sonnet-4-6',
 };
 
 export function resolveModel(requested: string | undefined): string {

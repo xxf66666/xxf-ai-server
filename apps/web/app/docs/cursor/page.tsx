@@ -17,8 +17,9 @@ export default function CursorDocs() {
           Cursor
         </a>{' '}
         是 VSCode fork 的 AI 编辑器，原生走 OpenAI 协议。本站的{' '}
-        <code>/v1/chat/completions</code> 端点会把 OpenAI 请求翻译到 Claude 上游，所以 Cursor
-        里输入 <code>gpt-4o</code> 实际会被转发到 <code>claude-sonnet-4-6</code>。
+        <code>/v1/chat/completions</code> 端点会把 OpenAI 请求翻译到 Claude 上游（或转发到 ChatGPT
+        Plus 池，如果已挂号）。Cursor 里输入 <code>gpt-5</code> 实际会被路由到 <code>claude-opus-4-7</code>
+        或 ChatGPT 上游。
       </p>
 
       <H2>1. 配置</H2>
@@ -40,10 +41,12 @@ export default function CursorDocs() {
 
       <H2>2. 可用模型名</H2>
       <p>Cursor 的模型下拉里选 OpenAI 模型，本站自动映射：</p>
-      <Code>{`gpt-4o           → claude-sonnet-4-6
-gpt-4o-mini      → claude-haiku-4-5-20251001
-o1               → claude-opus-4-7
-gpt-4-turbo      → claude-sonnet-4-6`}</Code>
+      <Code>{`gpt-5            → claude-opus-4-7
+gpt-5-mini       → claude-sonnet-4-6
+gpt-5-nano       → claude-haiku-4-5-20251001
+gpt-5-codex      → claude-sonnet-4-6
+o3               → claude-opus-4-7
+o3-mini          → claude-sonnet-4-6`}</Code>
       <p>
         如果想**直接**指定 Claude 模型，在模型名输入框里手输 <code>claude-sonnet-4-6</code>{' '}
         等原生 ID，Cursor 会原样传过来。
