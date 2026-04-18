@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
-import { Activity, ArrowRight, BookOpen, CircleDollarSign, KeyRound, Send, Terminal, Wallet, Zap } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Activity, ArrowRight, BookOpen, CircleDollarSign, KeyRound, Mail, Send, Terminal, Wallet, Zap } from 'lucide-react';
 import { apiFetch } from '../../../lib/api';
 import { useT } from '../../../lib/i18n/context';
 import type { DictKey } from '../../../lib/i18n/dict';
@@ -17,6 +17,7 @@ interface Overview {
   usedMonthly: number;
   balanceMud: number;
   spentMud: number;
+  emailVerified: boolean;
   timeseries: Array<{ ts: string; tokens: number; requests: number }>;
 }
 
@@ -34,6 +35,7 @@ function greetingKey(): DictKey {
 
 export default function ConsoleDashboardPage() {
   const t = useT();
+  const qc = useQueryClient();
   const { data: overview } = useQuery({
     queryKey: ['console', 'overview'],
     queryFn: () => apiFetch<Overview>('/v1/console/overview'),
@@ -43,6 +45,13 @@ export default function ConsoleDashboardPage() {
     queryKey: ['console', 'breakdown'],
     queryFn: () => apiFetch<Breakdown>('/v1/console/breakdown'),
     refetchInterval: 15_000,
+  });
+  const resend = useMutation({
+    mutationFn: () =>
+      apiFetch<{ sent: boolean }>('/admin/v1/auth/verify-email/send', { method: 'POST' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['console', 'overview'] });
+    },
   });
 
   const cards = [
@@ -85,6 +94,7 @@ export default function ConsoleDashboardPage() {
   ];
 
   const noKeys = overview && overview.activeKeys === 0;
+  const unverified = overview && overview.emailVerified === false;
 
   return (
     <div className="space-y-6">
@@ -94,6 +104,32 @@ export default function ConsoleDashboardPage() {
           {overview?.email ? `，${overview.email}` : ''}
         </h1>
       </div>
+
+      {unverified && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500/20 text-amber-600">
+            <Mail className="h-4 w-4" />
+          </div>
+          <div className="flex-1">
+            <div className="font-medium">{t('verify.banner.title')}</div>
+            <div className="text-xs text-muted-foreground">
+              {t('verify.banner.desc').replace('{email}', overview?.email ?? '')}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => resend.mutate()}
+            disabled={resend.isPending || resend.isSuccess}
+            className="rounded-md border border-amber-500/40 bg-background px-3 py-1.5 text-xs font-medium hover:bg-amber-500/10 disabled:opacity-60"
+          >
+            {resend.isSuccess
+              ? t('verify.banner.resent')
+              : resend.isPending
+              ? t('verify.banner.sending')
+              : t('verify.banner.resend')}
+          </button>
+        </div>
+      )}
 
       {/* Onboarding hint for new users (no keys yet) */}
       {noKeys && (

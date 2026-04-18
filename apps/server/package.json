@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "main": "dist/index.js",
-  "files": ["dist", "drizzle"],
+  "files": [
+    "dist",
+    "drizzle"
+  ],
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
@@ -33,6 +36,7 @@
     "pino": "^9.5.0",
     "postgres": "^3.4.5",
     "prom-client": "^15.1.3",
+    "resend": "^6.12.0",
     "undici": "^8.1.0",
     "zod": "^3.24.1"
   },

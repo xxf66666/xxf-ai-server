@@ -20,6 +20,7 @@ const schema = z.object({
   SERVER_HOST: z.string().default('0.0.0.0'),
   SERVER_PORT: z.coerce.number().int().positive().default(8787),
   PUBLIC_API_URL: z.string().url().default('http://localhost:8787'),
+  PUBLIC_WEB_URL: z.string().url().default('http://localhost:3000'),
 
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().min(1),
@@ -33,6 +34,13 @@ const schema = z.object({
   // Rate limit on /v1/* per API key.
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
+
+  // Email (Resend). If RESEND_API_KEY is empty, email verification is
+  // disabled gracefully — users are marked verified on register to keep
+  // the UX flowing. Set MAIL_FROM to a verified domain address for
+  // production; defaults to Resend's onboarding sandbox.
+  RESEND_API_KEY: z.string().optional(),
+  MAIL_FROM: z.string().default('xxf-ai-server <onboarding@resend.dev>'),
 
   CLAUDE_OAUTH_CLIENT_ID: z.string().optional(),
   CHATGPT_OAUTH_CLIENT_ID: z.string().optional(),

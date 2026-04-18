@@ -453,6 +453,23 @@ export const en = {
   'console.onboarding.desc':
     'Mint an API key, set two env vars, call your first model. 2-minute read.',
   'console.docs.link': 'Full documentation →',
+
+  // email verification
+  'verify.title': 'Verify your email',
+  'verify.loading': 'Confirming your email…',
+  'verify.ok.title': 'Email verified',
+  'verify.ok.sub': 'All set — you can now use all features.',
+  'verify.ok.msg': 'Your email has been successfully verified. Welcome aboard.',
+  'verify.ok.cta': 'Go to dashboard',
+  'verify.err.noToken': 'Missing verification token.',
+  'verify.err.generic':
+    'This verification link is invalid or has expired. Request a new one from the dashboard.',
+  'verify.banner.title': 'Please verify your email',
+  'verify.banner.desc':
+    'We sent a verification link to {email}. Check your inbox (including spam).',
+  'verify.banner.resend': 'Resend',
+  'verify.banner.sending': 'sending…',
+  'verify.banner.resent': 'sent ✓',
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -901,4 +918,19 @@ export const zh: Dict = {
   'console.onboarding.title': '第一次用？这里教你配置 Claude Code',
   'console.onboarding.desc': '铸一把 API 密钥，设两个环境变量，发第一个请求。2 分钟读完。',
   'console.docs.link': '查看完整文档 →',
+
+  // email verification
+  'verify.title': '验证邮箱',
+  'verify.loading': '正在确认邮箱…',
+  'verify.ok.title': '邮箱已验证',
+  'verify.ok.sub': '搞定 —— 所有功能都可以用了。',
+  'verify.ok.msg': '你的邮箱已成功验证。欢迎！',
+  'verify.ok.cta': '进入控制台',
+  'verify.err.noToken': '验证链接缺少 token。',
+  'verify.err.generic': '验证链接无效或已过期，请回控制台重新发送。',
+  'verify.banner.title': '请验证你的邮箱',
+  'verify.banner.desc': '我们已向 {email} 发送了验证链接，请查收（包括垃圾邮件）。',
+  'verify.banner.resend': '重新发送',
+  'verify.banner.sending': '发送中…',
+  'verify.banner.resent': '已发送 ✓',
 };

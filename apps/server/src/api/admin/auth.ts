@@ -8,6 +8,10 @@ import { record } from '../../core/audit/log.js';
 import { consumeInvite } from '../../core/invites/index.js';
 import { seedWelcomeCredit } from '../../core/users/ledger.js';
 import { getSetting } from '../../core/settings/index.js';
+import { consumeVerificationToken, createVerificationToken } from '../../core/email/verify.js';
+import { MAIL_ENABLED, sendVerificationEmail } from '../../core/email/sender.js';
+import { env } from '../../config/env.js';
+import { logger } from '../../utils/logger.js';
 
 const LoginSchema = z.object({
   email: z.string().email(),
@@ -93,6 +97,22 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
     // still let them in with balance=0.
     const welcome = Number(await getSetting('pricing.welcomeCreditMud')) || 0;
     if (welcome > 0) await seedWelcomeCredit(created.id, welcome).catch(() => {});
+
+    // Kick off the verification email. Fire-and-forget: slow SMTP shouldn't
+    // block registration, and delivery failure gets surfaced via the banner
+    // on the console dashboard (with a "resend" button).
+    if (MAIL_ENABLED) {
+      void createVerificationToken(created.id)
+        .then(async (token) => {
+          const url = `${env.PUBLIC_WEB_URL}/verify-email?token=${encodeURIComponent(token)}`;
+          const res = await sendVerificationEmail(created.email, url);
+          if (!res.ok) {
+            logger.warn({ userId: created.id, error: res.error }, 'verification email send failed');
+          }
+        })
+        .catch((err) => logger.warn({ err }, 'verification email setup failed'));
+    }
+
     // Auto-login: set cookie so the freshly-registered user lands in /console.
     const token = await reply.jwtSign(
       { sub: created.id, email: created.email, role: created.role },
@@ -106,6 +126,58 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
       detail: { email: created.email },
     });
     return reply.code(201).send({ id: created.id, email: created.email, role: created.role });
+  });
+
+  // Public: confirm token (user clicks the email link).
+  app.post('/admin/v1/auth/verify-email/confirm', async (req, reply) => {
+    const parsed = z.object({ token: z.string().min(1) }).safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'missing token' },
+      });
+    }
+    const userId = await consumeVerificationToken(parsed.data.token);
+    if (!userId) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'invalid or expired token' },
+      });
+    }
+    await record(req, { action: 'user.email_verified', entityType: 'user', entityId: userId });
+    return { ok: true };
+  });
+
+  // Authenticated: re-send verification (banner button on console).
+  app.post('/admin/v1/auth/verify-email/send', async (req, reply) => {
+    if (!req.adminSession || req.adminSession.sub === 'bootstrap') {
+      return reply.code(401).send({ error: 'unauth' });
+    }
+    const uid = req.adminSession.sub;
+    const [me] = await db.select().from(users).where(eq(users.id, uid)).limit(1);
+    if (!me) return reply.code(404).send({ error: 'not_found' });
+    if (me.emailVerified) return { ok: true, alreadyVerified: true };
+    if (!MAIL_ENABLED) {
+      return reply.code(503).send({
+        type: 'error',
+        error: { type: 'api_error', message: 'email service not configured on server' },
+      });
+    }
+    const token = await createVerificationToken(uid);
+    const url = `${env.PUBLIC_WEB_URL}/verify-email?token=${encodeURIComponent(token)}`;
+    const res = await sendVerificationEmail(me.email, url);
+    if (!res.ok) {
+      return reply.code(502).send({
+        type: 'error',
+        error: { type: 'api_error', message: res.error ?? 'send failed' },
+      });
+    }
+    await record(req, {
+      action: 'user.email_verify_resend',
+      entityType: 'user',
+      entityId: uid,
+    });
+    return { ok: true };
   });
 
   app.post('/admin/v1/auth/logout', async (_req, reply) => {

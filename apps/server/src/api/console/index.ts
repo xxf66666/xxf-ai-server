@@ -117,7 +117,11 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
     }
 
     const [meRow] = await db
-      .select({ balanceMud: users.balanceMud, spentMud: users.spentMud })
+      .select({
+        balanceMud: users.balanceMud,
+        spentMud: users.spentMud,
+        emailVerified: users.emailVerified,
+      })
       .from(users)
       .where(eq(users.id, uid))
       .limit(1);
@@ -130,6 +134,7 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
       usedMonthly,
       balanceMud: Number(meRow?.balanceMud ?? 0),
       spentMud: Number(meRow?.spentMud ?? 0),
+      emailVerified: Boolean(meRow?.emailVerified),
       timeseries,
     };
   });

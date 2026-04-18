@@ -33,9 +33,27 @@ export const users = pgTable('users', {
   // $5 welcome credit = 5_000_000 mud. New users get seeded at register time.
   balanceMud: bigint('balance_mud', { mode: 'number' }).default(0).notNull(),
   spentMud: bigint('spent_mud', { mode: 'number' }).default(0).notNull(),
+  // Email verification (soft-gate: register succeeds, but UI shows a
+  // banner and some write actions are blocked until confirmed).
+  emailVerified: boolean('email_verified').default(false).notNull(),
+  emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+// Single-use email verification tokens. 48-hour TTL. Kept in a separate
+// table so we can audit send attempts and rate-limit them later.
+export const emailVerificationTokens = pgTable('email_verification_tokens', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  token: varchar('token', { length: 64 }).notNull().unique(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
 
 export const proxies = pgTable('proxies', {
   id: uuid('id').defaultRandom().primaryKey(),
