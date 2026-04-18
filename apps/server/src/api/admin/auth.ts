@@ -77,11 +77,12 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
         // argon2.verify against the bogus '!' hash takes normal time.
         const nextCount = user.failedLoginCount + 1;
         const shouldLock = nextCount >= 5;
+        const LOCK_MS = 15 * 60 * 1000;
         await db
           .update(users)
           .set({
             failedLoginCount: nextCount,
-            lockedUntil: shouldLock ? new Date(Date.now() + 15 * 60 * 1000) : user.lockedUntil,
+            lockedUntil: shouldLock ? new Date(Date.now() + LOCK_MS) : user.lockedUntil,
             updatedAt: new Date(),
           })
           .where(eq(users.id, user.id))
@@ -92,6 +93,16 @@ export async function registerAdminAuth(app: FastifyInstance): Promise<void> {
           entityId: user.id,
           detail: { failedCount: nextCount, ip: req.ip, locked: shouldLock },
         }).catch(() => {});
+        if (shouldLock) {
+          return reply.code(423).send({
+            type: 'error',
+            error: {
+              type: 'account_locked',
+              message: 'too many failed attempts, try again later',
+              retryAfterSec: Math.ceil(LOCK_MS / 1000),
+            },
+          });
+        }
       }
       return reply.code(401).send({
         type: 'error',
