@@ -213,6 +213,10 @@ export const en = {
 
   'console.models.title': 'Available models',
   'console.models.subtitle': 'Models you can pass in the `model` field.',
+  'console.models.subtitle2':
+    'Models you can pass in the `model` field. Nexa charges {pct}% less than the official provider price.',
+  'console.models.footnote':
+    'Discount of {pct}% vs official list is applied uniformly to input and output tokens.',
   'console.models.col.id': 'Model',
   'console.models.col.provider': 'Provider',
   'console.models.col.tier': 'Tier',
@@ -309,7 +313,10 @@ export const en = {
   'invites.confirm.revoke': 'Revoke {code}?',
   'invites.confirm.delete': 'Delete invite {code}?',
   'invites.empty': 'No invites yet.',
-  'invites.copied': 'copied',
+  'invites.copied': 'Copied',
+  'invites.action.copyMessage': 'Copy message',
+  'invites.action.copyMessage.title':
+    'Copy a ready-made invite message (emoji + register URL + code) for chat / email.',
 
   // public nav
   'nav.pricing': 'Pricing',
@@ -386,7 +393,12 @@ export const en = {
     'Claude Opus, Sonnet, GPT-4o — all at 15% off official list price. Pay-as-you-go via redeem cards. No subscription, no credit card.',
   'home.hero.primary': 'Start free ($5 credit)',
   'home.hero.secondary': 'See pricing',
+  'home.hero.badge': 'Live · {pct}% off every model',
   'home.hero.eye.caption': 'We watch your budget, not your prompts.',
+  'home.stats.models': 'Models',
+  'home.stats.discount': 'Off official',
+  'home.stats.welcome': 'Welcome credit',
+  'home.stats.latency': 'Added latency',
   'home.feat.title': 'What you get',
   'home.feat.cheap.title': '15% off everything',
   'home.feat.cheap.desc': 'We pool subscriptions so you pay less than the official API. Always.',
@@ -430,6 +442,7 @@ export const en = {
     'Welcome credit: $5 on signup · Pay-as-you-go via redeem cards',
   'pricing.input': 'Input',
   'pricing.output': 'Output',
+  'pricing.unit': '/ 1M tokens',
 
   // terms & privacy
   'terms.title': 'Terms of Service',
@@ -774,6 +787,8 @@ export const zh: Dict = {
 
   'console.models.title': '可用模型',
   'console.models.subtitle': '可以传给 `model` 字段的模型列表。',
+  'console.models.subtitle2': '可以传给 `model` 字段的模型；Nexa 价格比官方低 {pct}%。',
+  'console.models.footnote': '全线模型统一按官方价打 {pct}% 折扣（输入输出同折扣）。',
   'console.models.col.id': '模型',
   'console.models.col.provider': '供应商',
   'console.models.col.tier': '档次',
@@ -870,6 +885,8 @@ export const zh: Dict = {
   'invites.confirm.delete': '删除 {code}？',
   'invites.empty': '还没有邀请码。',
   'invites.copied': '已复制',
+  'invites.action.copyMessage': '复制话术',
+  'invites.action.copyMessage.title': '复制一段含邀请码和注册地址的现成文案，直接粘到群聊或邮件。',
 
   // public nav
   'nav.pricing': '定价',
@@ -946,7 +963,12 @@ export const zh: Dict = {
     'Claude Opus / Sonnet、GPT-4o 全线 8.5 折。卡密按量付费，无订阅，无信用卡。',
   'home.hero.primary': '免费注册（送 $5）',
   'home.hero.secondary': '看价格',
+  'home.hero.badge': '运营中 · 全线模型打 {pct}% 折',
   'home.hero.eye.caption': '只盯着你的预算，不看你的 prompt。',
+  'home.stats.models': '可用模型',
+  'home.stats.discount': '对比官方价',
+  'home.stats.welcome': '新注册赠送',
+  'home.stats.latency': '额外延迟',
   'home.feat.title': '为什么选我们',
   'home.feat.cheap.title': '全线 8.5 折',
   'home.feat.cheap.desc': '聚合订阅账号，价格永远比官方 API 便宜。',
@@ -988,6 +1010,7 @@ export const zh: Dict = {
   'pricing.pagePlans': '新注册送 $5 · 卡密按量付费',
   'pricing.input': '输入',
   'pricing.output': '输出',
+  'pricing.unit': '/ 每百万 token',
 
   // terms & privacy
   'terms.title': '用户协议',

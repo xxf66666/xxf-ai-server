@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useT } from '../lib/i18n/context';
 import { LocaleSwitcher } from '../lib/i18n/LocaleSwitcher';
+import { NexaLogo } from './NexaLogo';
 
 export function MarketingHeader({ active }: { active?: 'pricing' | 'docs' | null }) {
   const t = useT();
@@ -11,9 +12,8 @@ export function MarketingHeader({ active }: { active?: 'pricing' | 'docs' | null
   return (
     <header className="border-b border-border bg-background/60 backdrop-blur">
       <div className="container mx-auto flex max-w-6xl items-center justify-between py-4">
-        <Link href="/" className="flex items-center gap-2 text-sm font-semibold">
-          <span className="rounded bg-primary px-1.5 py-0.5 text-xs text-primary-foreground">xxf</span>
-          <span>ai-server</span>
+        <Link href="/" className="flex items-center gap-2">
+          <NexaLogo size={28} withWordmark />
         </Link>
         <nav className="flex items-center gap-5">
           <Link href={'/pricing' as never} className={cls('pricing')}>

@@ -106,14 +106,17 @@ export default function PricingPage() {
                       <div className="mt-4 space-y-3">
                         <div className="flex items-baseline justify-between">
                           <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                            {t('pricing.input')} / M
+                            {t('pricing.input')}
                           </div>
                           <div className="text-right">
                             <div className="text-xs text-muted-foreground line-through">
-                              {fmtUsd(m.officialInputUsdPerM)}
+                              {fmtUsd(m.officialInputUsdPerM)} <span className="text-[10px]">{t('pricing.unit')}</span>
                             </div>
                             <div className="font-mono text-sm font-semibold">
-                              {fmtUsd(m.ourInputUsdPerM)}
+                              {fmtUsd(m.ourInputUsdPerM)}{' '}
+                              <span className="text-[10px] font-normal text-muted-foreground">
+                                {t('pricing.unit')}
+                              </span>
                               <span className="ml-1 text-xs text-muted-foreground">
                                 / {fmtCny(m.ourInputCnyPerM)}
                               </span>
@@ -122,14 +125,17 @@ export default function PricingPage() {
                         </div>
                         <div className="flex items-baseline justify-between border-t border-border pt-3">
                           <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                            {t('pricing.output')} / M
+                            {t('pricing.output')}
                           </div>
                           <div className="text-right">
                             <div className="text-xs text-muted-foreground line-through">
-                              {fmtUsd(m.officialOutputUsdPerM)}
+                              {fmtUsd(m.officialOutputUsdPerM)} <span className="text-[10px]">{t('pricing.unit')}</span>
                             </div>
                             <div className="font-mono text-sm font-semibold">
-                              {fmtUsd(m.ourOutputUsdPerM)}
+                              {fmtUsd(m.ourOutputUsdPerM)}{' '}
+                              <span className="text-[10px] font-normal text-muted-foreground">
+                                {t('pricing.unit')}
+                              </span>
                               <span className="ml-1 text-xs text-muted-foreground">
                                 / {fmtCny(m.ourOutputCnyPerM)}
                               </span>

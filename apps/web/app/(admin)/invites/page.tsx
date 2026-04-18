@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Check, Copy } from 'lucide-react';
 import { apiFetch } from '../../../lib/api';
 import { useT } from '../../../lib/i18n/context';
 
@@ -62,6 +63,29 @@ export default function InvitesPage() {
     active: 'bg-green-100 text-green-800',
     revoked: 'bg-red-100 text-red-800',
     exhausted: 'bg-muted text-muted-foreground',
+  };
+
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+
+  // Ready-made pitch the operator can paste into WeChat / QQ / email.
+  // Emoji count kept low so it doesn't trigger spam filters.
+  const buildMessage = (code: string) =>
+    [
+      `🎉 邀请你加入 Nexa — AI 网关（Claude / GPT 全线 8.5 折）`,
+      `👉 注册地址：${origin}/register`,
+      `🔑 邀请码：${code}`,
+      `🎁 新注册送 $5 体验额度，按量付费无订阅`,
+    ].join('\n');
+
+  const onCopyMessage = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(buildMessage(code));
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode((c) => (c === code ? null : c)), 1800);
+    } catch {
+      /* noop — clipboard may be blocked in dev */
+    }
   };
 
   return (
@@ -160,7 +184,27 @@ export default function InvitesPage() {
                   <td className="px-4 py-2 text-xs text-muted-foreground">
                     {new Date(i.createdAt).toLocaleString()}
                   </td>
-                  <td className="space-x-3 px-4 py-2 text-right">
+                  <td className="space-x-3 whitespace-nowrap px-4 py-2 text-right">
+                    {s === 'active' && (
+                      <button
+                        type="button"
+                        onClick={() => onCopyMessage(i.code)}
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                        title={t('invites.action.copyMessage.title')}
+                      >
+                        {copiedCode === i.code ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            {t('invites.copied')}
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            {t('invites.action.copyMessage')}
+                          </>
+                        )}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
