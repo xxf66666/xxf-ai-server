@@ -13,18 +13,21 @@ const DEFAULT_AUTH_BASE = 'https://auth.openai.com';
 // real Codex access_token. Overridable via env so we can track rotations.
 const DEFAULT_CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann';
 
-export const CHATGPT_AUTH_BASE = process.env.CHATGPT_AUTH_BASE ?? DEFAULT_AUTH_BASE;
+// Use `||` rather than `??` so an empty-string env (common when a compose
+// file passes through a blank default) still falls back to the baked-in
+// values; `??` would treat '' as "explicitly set" and try to fetch from "".
+export const CHATGPT_AUTH_BASE = process.env.CHATGPT_AUTH_BASE || DEFAULT_AUTH_BASE;
 export const CHATGPT_OAUTH_CLIENT_ID =
-  process.env.CHATGPT_OAUTH_CLIENT_ID ?? DEFAULT_CLIENT_ID;
+  process.env.CHATGPT_OAUTH_CLIENT_ID || DEFAULT_CLIENT_ID;
 export const CHATGPT_TOKEN_PATH = '/oauth/token';
 
 // Upstream for the actual Codex Responses API. The exact host is in
 // flux — we let operators override via env. Default matches what Codex
 // CLI 2026-04 binaries call.
 export const CHATGPT_UPSTREAM_BASE =
-  process.env.CHATGPT_UPSTREAM_BASE ?? 'https://chatgpt.com';
+  process.env.CHATGPT_UPSTREAM_BASE || 'https://chatgpt.com';
 export const CHATGPT_RESPONSES_PATH =
-  process.env.CHATGPT_RESPONSES_PATH ?? '/backend-api/codex/responses';
+  process.env.CHATGPT_RESPONSES_PATH || '/backend-api/codex/responses';
 
 export interface ChatgptAuthExtras {
   /** Required header — identifies which ChatGPT account to bill. */
