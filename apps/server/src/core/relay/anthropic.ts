@@ -42,7 +42,7 @@ export async function relayMessages(
   const startedAt = Date.now();
 
   if (await isOpen('claude')) {
-    await logUsage(ctx, model, 0, 0, 0, 503, 'circuit_open');
+    await logUsage(ctx, model, 0, 0, 503, 'circuit_open');
     return reply.code(503).send({
       type: 'error',
       error: { type: 'overloaded_error', message: 'upstream circuit open; try again shortly' },
@@ -51,7 +51,7 @@ export async function relayMessages(
 
   const accessToken = await ensureFreshAccessToken(ctx.account);
   if (!accessToken) {
-    await logUsage(ctx, model, 0, 0, Date.now() - startedAt, 503, 'needs_reauth');
+    await logUsage(ctx, model, 0, Date.now() - startedAt, 503, 'needs_reauth');
     return reply.code(503).send({
       type: 'error',
       error: { type: 'overloaded_error', message: 'account needs reauth; pool try again' },
@@ -72,7 +72,7 @@ export async function relayMessages(
   } catch (err) {
     logger.error({ err, accountId: ctx.account.id }, 'upstream fetch failed');
     await Promise.all([
-      logUsage(ctx, model, 0, 0, Date.now() - startedAt, 502, 'upstream_unreachable'),
+      logUsage(ctx, model, 0, Date.now() - startedAt, 502, 'upstream_unreachable'),
       recordRequest('claude', true),
     ]);
     return reply.code(502).send({
@@ -87,7 +87,7 @@ export async function relayMessages(
     const classification = classifyUpstream(upstream.status, upstream.headers.get('retry-after'), text);
     await Promise.all([
       applyClassification(ctx.account, classification),
-      logUsage(ctx, model, 0, 0, latencyMs, upstream.status, classification.kind),
+      logUsage(ctx, model, 0, latencyMs, upstream.status, classification.kind),
       recordRequest('claude', true),
     ]);
     relayRequests.inc({ provider: 'claude', route: 'messages', outcome: classification.kind });
@@ -123,12 +123,15 @@ export async function relayMessages(
     } finally {
       raw.end();
       const latencyMs = Date.now() - startedAt;
-      const total = usage.inputTokens + usage.outputTokens;
-      const costMud = await computeCost(model, usage.inputTokens, usage.outputTokens).catch(() => 0);
-      // Log TTFB separately so we can distinguish "prefill was slow"
-      // from "output was slow". If ttfb dominates total, user's context
-      // is huge / upstream prefill is cold; if ttfb is tiny but total
-      // is big, we're just generating a lot of output tokens.
+      const totalInput =
+        usage.inputTokens + usage.cacheReadTokens + usage.cacheCreationTokens;
+      const total = totalInput + usage.outputTokens;
+      const costMud = await computeCost(model, {
+        inputTokens: usage.inputTokens,
+        cacheReadTokens: usage.cacheReadTokens,
+        cacheCreationTokens: usage.cacheCreationTokens,
+        outputTokens: usage.outputTokens,
+      }).catch(() => 0);
       logger.info(
         {
           accountId: ctx.account.id,
@@ -136,7 +139,10 @@ export async function relayMessages(
           latencyMs,
           ttfbMs: usage.ttfbMs,
           inputTokens: usage.inputTokens,
+          cacheReadTokens: usage.cacheReadTokens,
+          cacheCreationTokens: usage.cacheCreationTokens,
           outputTokens: usage.outputTokens,
+          costMud,
           tokPerSec:
             usage.outputTokens > 0 && latencyMs > (usage.ttfbMs ?? 0)
               ? Math.round(
@@ -147,7 +153,7 @@ export async function relayMessages(
         'relay_complete',
       );
       await Promise.all([
-        logUsage(ctx, model, usage.inputTokens, usage.outputTokens, latencyMs, 200, null, costMud),
+        logUsage(ctx, model, usage, latencyMs, 200, null, costMud),
         incrementWindowUsage(ctx.account.id, total).catch(() => {}),
         addWindowUsage(ctx.account.id, total).catch(() => {}),
         recordKeyUsage(ctx.apiKey.id, total).catch(() => {}),
@@ -167,14 +173,24 @@ export async function relayMessages(
 
   const text = await upstream.text();
   const parsed = safeJson(text);
-  const usage = (parsed?.['usage'] ?? {}) as Record<string, unknown>;
-  const input = typeof usage.input_tokens === 'number' ? usage.input_tokens : 0;
-  const output = typeof usage.output_tokens === 'number' ? usage.output_tokens : 0;
-  const total = input + output;
+  const usageRaw = (parsed?.['usage'] ?? {}) as Record<string, unknown>;
+  const num = (k: string) => (typeof usageRaw[k] === 'number' ? (usageRaw[k] as number) : 0);
+  const usageBuckets = {
+    inputTokens: num('input_tokens'),
+    cacheReadTokens: num('cache_read_input_tokens'),
+    cacheCreationTokens: num('cache_creation_input_tokens'),
+    outputTokens: num('output_tokens'),
+    ttfbMs: null as number | null,
+  };
+  const total =
+    usageBuckets.inputTokens +
+    usageBuckets.cacheReadTokens +
+    usageBuckets.cacheCreationTokens +
+    usageBuckets.outputTokens;
   const latencyMs = Date.now() - startedAt;
-  const costMud = await computeCost(model, input, output).catch(() => 0);
+  const costMud = await computeCost(model, usageBuckets).catch(() => 0);
   await Promise.all([
-    logUsage(ctx, model, input, output, latencyMs, upstream.status, null, costMud),
+    logUsage(ctx, model, usageBuckets, latencyMs, upstream.status, null, costMud),
     incrementWindowUsage(ctx.account.id, total).catch(() => {}),
     addWindowUsage(ctx.account.id, total).catch(() => {}),
     recordKeyUsage(ctx.apiKey.id, total).catch(() => {}),
@@ -183,8 +199,8 @@ export async function relayMessages(
   ]);
   relayRequests.inc({ provider: 'claude', route: 'messages', outcome: 'ok' });
   relayLatencyMs.observe({ provider: 'claude', route: 'messages' }, latencyMs);
-  relayTokens.inc({ provider: 'claude', direction: 'input' }, input);
-  relayTokens.inc({ provider: 'claude', direction: 'output' }, output);
+  relayTokens.inc({ provider: 'claude', direction: 'input' }, usageBuckets.inputTokens);
+  relayTokens.inc({ provider: 'claude', direction: 'output' }, usageBuckets.outputTokens);
   reply.code(upstream.status).header('content-type', 'application/json');
   return reply.send(parsed ?? text);
 }
@@ -197,24 +213,42 @@ function safeJson(text: string): Record<string, unknown> | null {
   }
 }
 
+// A subset of UsageAccumulator used for error-path logging where the
+// stream never produced usage numbers. Zero-valued fields are fine.
+interface UsageLike {
+  inputTokens: number;
+  cacheReadTokens?: number;
+  cacheCreationTokens?: number;
+  outputTokens: number;
+}
+
+const EMPTY_USAGE: UsageLike = {
+  inputTokens: 0,
+  cacheReadTokens: 0,
+  cacheCreationTokens: 0,
+  outputTokens: 0,
+};
+
 async function logUsage(
   ctx: RelayContext,
   model: string,
-  inputTokens: number,
-  outputTokens: number,
+  u: UsageLike | 0,
   latencyMs: number,
   status: number,
   errorCode: string | null,
   costMud: number = 0,
 ): Promise<void> {
+  const usage = u === 0 ? EMPTY_USAGE : u;
   try {
     await db.insert(usageLog).values({
       apiKeyId: ctx.apiKey.id,
       accountId: ctx.account.id,
       provider: 'claude',
       model,
-      inputTokens,
-      outputTokens,
+      inputTokens: usage.inputTokens,
+      cacheReadTokens: usage.cacheReadTokens ?? 0,
+      cacheCreationTokens: usage.cacheCreationTokens ?? 0,
+      outputTokens: usage.outputTokens,
       latencyMs,
       status,
       errorCode,

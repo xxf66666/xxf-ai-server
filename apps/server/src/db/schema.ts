@@ -173,7 +173,12 @@ export const usageLog = pgTable('usage_log', {
   accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'set null' }),
   provider: providerEnum('provider').notNull(),
   model: varchar('model', { length: 120 }).notNull(),
+  // input_tokens here = ONLY fresh tokens (not cached). Legacy rows from
+  // before 0011 may conflate all three into this column; the new
+  // cache_* columns default to 0 for rows predating the change.
   inputTokens: integer('input_tokens').default(0).notNull(),
+  cacheReadTokens: integer('cache_read_tokens').default(0).notNull(),
+  cacheCreationTokens: integer('cache_creation_tokens').default(0).notNull(),
   outputTokens: integer('output_tokens').default(0).notNull(),
   latencyMs: integer('latency_ms').default(0).notNull(),
   status: integer('status').notNull(), // HTTP status
@@ -218,6 +223,12 @@ export const modelPricing = pgTable('model_pricing', {
   provider: varchar('provider', { length: 16 }).notNull(),
   inputMudPerM: bigint('input_mud_per_m', { mode: 'number' }).notNull(),
   outputMudPerM: bigint('output_mud_per_m', { mode: 'number' }).notNull(),
+  // Prompt-caching rates. Anthropic charges cache_read at ~0.1x normal
+  // input rate and cache_creation at ~1.25x. Nullable so legacy models
+  // without caching support can leave them empty and be billed at the
+  // flat input rate.
+  cacheReadMudPerM: bigint('cache_read_mud_per_m', { mode: 'number' }),
+  cacheCreationMudPerM: bigint('cache_creation_mud_per_m', { mode: 'number' }),
   tier: varchar('tier', { length: 32 }),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

@@ -126,7 +126,7 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
       } catch (err) {
         logger.error({ err, accountId: account.id }, 'openai relay upstream fetch failed');
         await Promise.all([
-          logEntry(apiKey.id, account.id, requestedModel, 0, 0, Date.now() - startedAt, 502, 'upstream_unreachable'),
+          logEntry(apiKey.id, account.id, requestedModel, 0, Date.now() - startedAt, 502, 'upstream_unreachable'),
           recordRequest('claude', true),
         ]);
         return reply.code(502).send({ error: { type: 'api_error', message: 'upstream unreachable' } });
@@ -141,7 +141,6 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
             apiKey.id,
             account.id,
             requestedModel,
-            0,
             0,
             Date.now() - startedAt,
             upstream.status,
@@ -167,6 +166,8 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
         const decoder = new TextDecoder();
         let buf = '';
         let inputTokens = 0;
+        let cacheReadTokens = 0;
+        let cacheCreationTokens = 0;
         let outputTokens = 0;
         try {
           for (;;) {
@@ -185,14 +186,23 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
                 else if (line.startsWith('data:')) data = line.slice(5).trim();
               }
               if (!event || !data) continue;
-              // Track tokens for accounting.
+              // Track tokens for accounting. Same cache-aware pattern as
+              // the Anthropic relay — keep the three input buckets
+              // separate so computeCost can charge each at its own rate.
               if (event === 'message_start' || event === 'message_delta') {
                 try {
                   const p = JSON.parse(data);
                   const u = p.usage ?? p.message?.usage;
                   if (u) {
-                    if (typeof u.input_tokens === 'number') inputTokens = u.input_tokens;
-                    if (typeof u.output_tokens === 'number') outputTokens = u.output_tokens;
+                    const take = (cur: number, raw: unknown): number =>
+                      typeof raw === 'number' && raw > cur ? raw : cur;
+                    inputTokens = take(inputTokens, u.input_tokens);
+                    cacheReadTokens = take(cacheReadTokens, u.cache_read_input_tokens);
+                    cacheCreationTokens = take(
+                      cacheCreationTokens,
+                      u.cache_creation_input_tokens,
+                    );
+                    outputTokens = take(outputTokens, u.output_tokens);
                   }
                 } catch {
                   /* ignore */
@@ -207,11 +217,30 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
           logger.error({ err, accountId: account.id }, 'openai stream forwarding failed');
         } finally {
           raw.end();
-          const total = inputTokens + outputTokens;
+          const total = inputTokens + cacheReadTokens + cacheCreationTokens + outputTokens;
           const latencyMs = Date.now() - startedAt;
-          const costMud = await computeCost(anthropicBody.model, inputTokens, outputTokens).catch(() => 0);
+          const costMud = await computeCost(requestedModel, {
+            inputTokens,
+            cacheReadTokens,
+            cacheCreationTokens,
+            outputTokens,
+          }).catch(() => 0);
           await Promise.all([
-            logEntry(apiKey.id, account.id, requestedModel, inputTokens, outputTokens, latencyMs, 200, null, costMud),
+            logEntry(
+              apiKey.id,
+              account.id,
+              requestedModel,
+              {
+                inputTokens,
+                cacheReadTokens,
+                cacheCreationTokens,
+                outputTokens,
+              },
+              latencyMs,
+              200,
+              null,
+              costMud,
+            ),
             incrementWindowUsage(account.id, total).catch(() => {}),
             addWindowUsage(account.id, total).catch(() => {}),
             recordKeyUsage(apiKey.id, total).catch(() => {}),
@@ -235,13 +264,31 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
         requestedModel,
       );
       const usage = (parsed['usage'] ?? {}) as Record<string, unknown>;
-      const input = typeof usage.input_tokens === 'number' ? usage.input_tokens : 0;
-      const output = typeof usage.output_tokens === 'number' ? usage.output_tokens : 0;
-      const total = input + output;
+      const num = (k: string) => (typeof usage[k] === 'number' ? (usage[k] as number) : 0);
+      const buckets = {
+        inputTokens: num('input_tokens'),
+        cacheReadTokens: num('cache_read_input_tokens'),
+        cacheCreationTokens: num('cache_creation_input_tokens'),
+        outputTokens: num('output_tokens'),
+      };
+      const total =
+        buckets.inputTokens +
+        buckets.cacheReadTokens +
+        buckets.cacheCreationTokens +
+        buckets.outputTokens;
       const latencyMs = Date.now() - startedAt;
-      const costMud = await computeCost(anthropicBody.model, input, output).catch(() => 0);
+      const costMud = await computeCost(requestedModel, buckets).catch(() => 0);
       await Promise.all([
-        logEntry(apiKey.id, account.id, requestedModel, input, output, latencyMs, 200, null, costMud),
+        logEntry(
+          apiKey.id,
+          account.id,
+          requestedModel,
+          buckets,
+          latencyMs,
+          200,
+          null,
+          costMud,
+        ),
         incrementWindowUsage(account.id, total).catch(() => {}),
         addWindowUsage(account.id, total).catch(() => {}),
         recordKeyUsage(apiKey.id, total).catch(() => {}),
@@ -253,25 +300,37 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
   );
 }
 
+interface UsageLike {
+  inputTokens: number;
+  cacheReadTokens?: number;
+  cacheCreationTokens?: number;
+  outputTokens: number;
+}
+
 async function logEntry(
   apiKeyId: string,
   accountId: string,
   model: string,
-  inputTokens: number,
-  outputTokens: number,
+  u: UsageLike | 0,
   latencyMs: number,
   status: number,
   errorCode: string | null,
   costMud: number = 0,
 ): Promise<void> {
+  const usage: UsageLike =
+    u === 0
+      ? { inputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, outputTokens: 0 }
+      : u;
   try {
     await db.insert(usageLog).values({
       apiKeyId,
       accountId,
       provider: 'claude',
       model,
-      inputTokens,
-      outputTokens,
+      inputTokens: usage.inputTokens,
+      cacheReadTokens: usage.cacheReadTokens ?? 0,
+      cacheCreationTokens: usage.cacheCreationTokens ?? 0,
+      outputTokens: usage.outputTokens,
       latencyMs,
       status,
       errorCode,

@@ -1,14 +1,14 @@
 // Minimal SSE parser used by the relay to pull `usage` out of Anthropic's
-// `message_delta` event while forwarding every byte untouched to the client.
-
-export interface UsageDelta {
-  inputTokens?: number;
-  outputTokens?: number;
-}
+// `message_start` + `message_delta` events while forwarding every byte
+// untouched to the client.
 
 export interface UsageAccumulator {
-  /** Total billable input = input + cache_read + cache_creation. */
+  /** Fresh input tokens — not replayed from cache. */
   inputTokens: number;
+  /** Replayed from prompt cache; charged ~10% of input rate. */
+  cacheReadTokens: number;
+  /** Written into cache this turn; charged ~125% of input rate. */
+  cacheCreationTokens: number;
   outputTokens: number;
   /** ms elapsed between start() and first byte seen in ingest(). */
   ttfbMs: number | null;
@@ -22,6 +22,8 @@ export function createUsageAccumulator(): UsageAccumulator {
   let startedAt = 0;
   const acc: UsageAccumulator = {
     inputTokens: 0,
+    cacheReadTokens: 0,
+    cacheCreationTokens: 0,
     outputTokens: 0,
     ttfbMs: null,
     start() {
@@ -32,8 +34,6 @@ export function createUsageAccumulator(): UsageAccumulator {
         acc.ttfbMs = Date.now() - startedAt;
       }
       buffer += decoder.decode(chunk, { stream: true });
-      // SSE frames are separated by blank lines. Parse complete frames only,
-      // leave partial tail in buffer for the next ingest.
       let idx: number;
       while ((idx = buffer.indexOf('\n\n')) !== -1) {
         const frame = buffer.slice(0, idx);
@@ -53,29 +53,27 @@ function consumeFrame(frame: string, acc: UsageAccumulator): void {
     else if (line.startsWith('data:')) data = line.slice(5).trim();
   }
   if (!data) return;
-  // Anthropic emits `message_start` with initial usage, and `message_delta`
-  // with final usage (including output_tokens once the stream is done).
   if (event !== 'message_start' && event !== 'message_delta') return;
   try {
     const parsed = JSON.parse(data);
     const usage = parsed.usage ?? parsed.message?.usage;
     if (!usage) return;
-    // With prompt caching + 1M context, real input is split across three
-    // fields; charge the user for all of them. output_tokens is monotonic
-    // per event so overwrite, but input we combine once on message_start.
-    const fresh =
-      (typeof usage.input_tokens === 'number' ? usage.input_tokens : 0) +
-      (typeof usage.cache_read_input_tokens === 'number'
-        ? usage.cache_read_input_tokens
-        : 0) +
-      (typeof usage.cache_creation_input_tokens === 'number'
-        ? usage.cache_creation_input_tokens
-        : 0);
-    // Only update if the new number is larger — stops message_delta with
-    // only output_tokens from zeroing out the input count captured at
-    // message_start.
-    if (fresh > acc.inputTokens) acc.inputTokens = fresh;
-    if (typeof usage.output_tokens === 'number') acc.outputTokens = usage.output_tokens;
+    // Each field comes from Anthropic's authoritative tokenizer. We keep
+    // the three input buckets SEPARATE so billing can charge each at
+    // its own rate (Anthropic: read = 10% of input, creation = 125%).
+    // `take` only updates when the new value is larger; message_delta
+    // may emit only output_tokens and we don't want that event to zero
+    // out the input counts captured at message_start.
+    const take = (
+      key: 'inputTokens' | 'cacheReadTokens' | 'cacheCreationTokens' | 'outputTokens',
+      raw: unknown,
+    ) => {
+      if (typeof raw === 'number' && raw > acc[key]) acc[key] = raw;
+    };
+    take('inputTokens', usage.input_tokens);
+    take('cacheReadTokens', usage.cache_read_input_tokens);
+    take('cacheCreationTokens', usage.cache_creation_input_tokens);
+    take('outputTokens', usage.output_tokens);
   } catch {
     // Non-JSON payloads are ignored; we never fail the relay on parse errors.
   }
