@@ -8,11 +8,11 @@ import {
 
 describe('resolveModel', () => {
   it('maps known OpenAI names to Claude', () => {
-    expect(resolveModel('gpt-5')).toBe('claude-opus-4-7');
-    expect(resolveModel('gpt-5-mini')).toBe('claude-sonnet-4-6');
-    expect(resolveModel('gpt-5-nano')).toBe('claude-haiku-4-5-20251001');
-    expect(resolveModel('o3')).toBe('claude-opus-4-7');
-    expect(resolveModel('o3-mini')).toBe('claude-sonnet-4-6');
+    expect(resolveModel('gpt-5.4')).toBe('claude-opus-4-7');
+    expect(resolveModel('gpt-5.4-mini')).toBe('claude-sonnet-4-6');
+    expect(resolveModel('gpt-5.3-codex')).toBe('claude-sonnet-4-6');
+    expect(resolveModel('gpt-5.1-codex-max')).toBe('claude-opus-4-7');
+    expect(resolveModel('gpt-5.1-codex-mini')).toBe('claude-haiku-4-5-20251001');
   });
 
   it('passes claude-* names through', () => {

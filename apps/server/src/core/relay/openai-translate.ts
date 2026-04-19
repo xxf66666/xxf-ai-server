@@ -42,20 +42,21 @@ export interface AnthropicRequest {
 }
 
 // Default model mapping when client requests an OpenAI model name.
-// 2026 catalogue only — gpt-4 / gpt-3.5 / o1 have been retired.
+// Source: actual Codex CLI model picker as of 2026-04.
 // When no ChatGPT upstream pool is attached, each OpenAI id translates
-// to the nearest Claude tier:
-//   flagship (gpt-5, o3) → claude-opus-4-7
-//   mid      (gpt-5-mini, gpt-5-codex, o3-mini) → claude-sonnet-4-6
-//   small    (gpt-5-nano) → claude-haiku-4-5-20251001
-// Can be overridden via `system_settings.models.allow` + mapping later.
+// to the nearest Claude tier. Can be overridden via
+// `system_settings.models.allow` + a mapping table later.
 const DEFAULT_MODEL_MAP: Record<string, string> = {
-  'gpt-5': 'claude-opus-4-7',
-  'gpt-5-mini': 'claude-sonnet-4-6',
-  'gpt-5-nano': 'claude-haiku-4-5-20251001',
-  'gpt-5-codex': 'claude-sonnet-4-6',
-  'o3': 'claude-opus-4-7',
-  'o3-mini': 'claude-sonnet-4-6',
+  // flagship current
+  'gpt-5.4': 'claude-opus-4-7',
+  'gpt-5.4-mini': 'claude-sonnet-4-6',
+  // codex family (agentic coding optimized)
+  'gpt-5.3-codex': 'claude-sonnet-4-6',
+  'gpt-5.2-codex': 'claude-sonnet-4-6',
+  'gpt-5.1-codex-max': 'claude-opus-4-7',
+  'gpt-5.1-codex-mini': 'claude-haiku-4-5-20251001',
+  // professional work / long-running
+  'gpt-5.2': 'claude-sonnet-4-6',
 };
 
 export function resolveModel(requested: string | undefined): string {

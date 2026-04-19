@@ -85,6 +85,13 @@
       "when": 1776540000000,
       "tag": "0011_cache_aware_pricing",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1776573000000,
+      "tag": "0012_real_codex_catalog",
+      "breakpoints": true
     }
   ]
 }
