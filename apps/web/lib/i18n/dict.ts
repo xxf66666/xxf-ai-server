@@ -511,6 +511,8 @@ export const en = {
   'footer.product': 'Product',
   'footer.legal': 'Legal',
   'footer.account': 'Account',
+  'footer.status': 'Status',
+  'footer.compare': 'vs OpenRouter',
   'footer.terms': 'Terms of Service',
   'footer.privacy': 'Privacy Policy',
   'footer.disclaimer':
@@ -647,6 +649,186 @@ export const en = {
   'docs.sdk.tryit.waiting': 'waiting for first token…',
   'docs.sdk.tryit.err.noKey': 'paste an sk-xxf-... key first',
   'docs.read': 'Read',
+
+  // status page
+  'status.title': 'Service status',
+  'status.subtitle':
+    'Live probes against the Nexa gateway. Refreshes every 30 seconds.',
+  'status.banner.ok': 'All systems operational',
+  'status.banner.degraded': 'Degraded — investigating',
+  'status.banner.subtitle': 'Probe completed; gateway, database, and cache are responsive.',
+  'status.uptime': 'uptime',
+  'status.probeLatency': 'probe latency',
+  'status.component.api': 'API gateway',
+  'status.component.unreachable': 'unreachable',
+  'status.providers.heading': 'Upstream providers',
+  'status.providers.subtitle':
+    'Live = an API key is configured and the operator has not paused it. Pool = served by the Claude OAuth account pool. Pending = no key (configured later).',
+  'status.providers.models': 'models',
+  'status.state.pool': 'OAuth pool',
+  'status.state.live': 'live',
+  'status.state.pending': 'pending',
+  'status.refreshing': 'auto-refreshing every 30s',
+  'status.refreshNow': 'Refresh now',
+
+  // vs / openrouter compare
+  'vs.title.lead': 'A relay built for developers',
+  'vs.title.tail': '— compared to OpenRouter, head-to-head.',
+  'vs.subtitle':
+    'Both gateways do the same job: one API key, many models. We picked the most-asked questions and answered them honestly. If OpenRouter is the better fit for you, we will say so.',
+  'vs.tldr.markup.big': '15% off',
+  'vs.tldr.markup.small': 'on every model vs. official rates. OpenRouter adds 5% on top.',
+  'vs.tldr.claude.big': 'Claude pool',
+  'vs.tldr.claude.small': 'OAuth-account-pool routing for claude-* — ~50% cheaper than the API.',
+  'vs.tldr.protocol.big': 'Both protocols',
+  'vs.tldr.protocol.small': 'Native /v1/messages and /v1/chat/completions on every model.',
+  'vs.table.feature': 'Feature',
+  'vs.row.markup.feature': 'Markup over official price',
+  'vs.row.markup.detail':
+    'Per-token rate the gateway charges relative to the upstream\'s posted price.',
+  'vs.row.markup.nexa': '−15% (cheaper)',
+  'vs.row.claudePool.feature': 'Claude OAuth account pool',
+  'vs.row.claudePool.detail':
+    'Routes claude-* traffic through Claude Code subscription accounts. Halves the per-token cost vs. the Anthropic API. Pool depth caps concurrency.',
+  'vs.row.claudePool.nexa': 'live',
+  'vs.row.protocol.feature': 'Protocols supported',
+  'vs.row.protocol.detail':
+    'Anthropic-shaped /v1/messages (multi-block content, tool_use, prompt cache) and OpenAI-shaped /v1/chat/completions both work for every model in the catalog.',
+  'vs.row.protocol.nexa': 'Anthropic + OpenAI',
+  'vs.row.welcome.feature': 'Welcome credit',
+  'vs.row.welcome.detail': 'Free balance on signup, no card required.',
+  'vs.row.privacy.feature': 'Prompt logging',
+  'vs.row.privacy.detail':
+    'Whether prompts and completions are persisted server-side. Token counts and pricing are always logged for billing.',
+  'vs.row.privacy.nexa': 'Zero retention',
+  'vs.row.privacy.them': 'Per-account opt-in',
+  'vs.row.caps.feature': 'Per-key day / week / month caps',
+  'vs.row.caps.detail':
+    'Hard $-cap at the gateway. We return 402 instead of forwarding to upstream. Stops a runaway agent before it bleeds the wallet.',
+  'vs.row.caps.nexa': 'Built-in, Redis-backed',
+  'vs.row.cache.feature': 'Anthropic prompt caching',
+  'vs.row.cache.detail':
+    'Server-side caching of system prompts + tool defs. cache_read tokens billed at ~10% input rate.',
+  'vs.row.cache.nexa': 'Cache_read 10%, cache_creation 125%',
+  'vs.row.cache.them': 'Bypassed for some routes',
+  'vs.row.providers.feature': 'Upstream providers',
+  'vs.row.providers.detail':
+    'How many distinct vendors you can hit through one API key. Both gateways add more over time.',
+  'vs.row.providers.nexa': '9 (curated)',
+  'vs.row.providers.them': '60+ (every model)',
+  'vs.row.payments.feature': 'Payment methods',
+  'vs.row.payments.detail':
+    'How you top up the wallet. CN: Alipay/WeChat by redeem cards.',
+  'vs.row.payments.nexa': 'Alipay / WeChat redeem',
+  'vs.row.uptime.feature': 'Public status page',
+  'vs.row.uptime.detail': 'Live probes against API, DB, cache.',
+  'vs.when.nexa.title': 'Pick Nexa if…',
+  'vs.when.nexa.b1':
+    '· You spend most of your day in Claude Code, Cline, or Cursor — the OAuth pool is built for you.',
+  'vs.when.nexa.b2':
+    '· You want $-caps per key so a runaway agent can\'t blow $200 overnight.',
+  'vs.when.nexa.b3':
+    '· You\'re paying with Alipay / WeChat redeem cards (we have them; OpenRouter does not).',
+  'vs.when.nexa.b4':
+    '· You actually use Anthropic prompt caching and need the gateway to pass cache_control through.',
+  'vs.when.them.title': 'Pick OpenRouter if…',
+  'vs.when.them.b1':
+    '· You need a model we haven\'t added yet (we curate; they index everything).',
+  'vs.when.them.b2':
+    '· You want crypto / Stripe billing as your only top-up rail.',
+  'vs.when.them.b3':
+    '· Your traffic shape never touches Claude — the OAuth pool isn\'t saving you money.',
+  'vs.cta.try': 'Try Nexa free — $5 credit',
+  'vs.cta.pricing': 'See model prices',
+  'vs.disclaimer':
+    'OpenRouter pricing as of openrouter.ai posted rates; cross-check before signing a paid plan.',
+
+  // vibe-coding landing
+  'vibe.hero.badge': 'For Claude Code · Cline · Cursor · OpenCode users',
+  'vibe.hero.title.lead': 'Vibe-code',
+  'vibe.hero.title.tail': 'with one key, half the bill, all night long.',
+  'vibe.hero.pitch':
+    'Nexa points your existing AI coding agent at a Claude OAuth account pool — same model, same protocol, ~50% the cost. Long sessions don\'t hit per-account rate limits because we round-robin across the pool.',
+  'vibe.hero.cta': 'Get a key — $5 free credit',
+  'vibe.hero.skip': 'Jump to configs',
+  'vibe.stat.discount': 'cheaper than Anthropic API on claude-* models',
+  'vibe.stat.session': 'long sessions without rate-limit hangs',
+  'vibe.stat.oneKey': 'works with every coding agent that speaks OpenAI or Anthropic',
+  'vibe.benefits.heading': 'Built around how you actually code',
+  'vibe.benefit.cheap.title': 'Cheaper claude-* by default',
+  'vibe.benefit.cheap.desc':
+    'OAuth account pool serves Claude Sonnet and Opus at ~50% of the API list price. No quota games, no plan tiers.',
+  'vibe.benefit.context.title': 'Prompt cache flows through',
+  'vibe.benefit.context.desc':
+    'cache_control headers passed through verbatim. cache_read tokens billed at ~10% input rate, exactly like the official API.',
+  'vibe.benefit.long.title': 'Marathon-friendly',
+  'vibe.benefit.long.desc':
+    'Per-account rate limits hit one account, not your session. The pool deflects 429s so 8-hour refactors don\'t stall.',
+  'vibe.benefit.tools.title': 'Tool calls untouched',
+  'vibe.benefit.tools.desc':
+    'tool_use, tool_result, and tool_choice round-trip byte-for-byte. If your agent works against the upstream, it works through Nexa.',
+  'vibe.configs.heading': 'Drop-in configs',
+  'vibe.configs.intro':
+    'Pick your tool, paste the snippet, replace sk-xxf-... with the key from /console. That\'s it.',
+  'vibe.configs.footnote': 'More tools, SDK examples, and gotchas live in',
+  'vibe.habits.heading': 'Four habits that keep your bill predictable',
+  'vibe.habits.intro':
+    'These are the controls Nexa exposes that big platforms either charge for or hide.',
+  'vibe.habits.h1.title': 'Pin a per-key day cap',
+  'vibe.habits.h1.body':
+    'Default $1/day for any new experiment. Upgrade once you\'ve seen real traffic. The gateway returns 402 instead of forwarding upstream — there is no scenario where a runaway agent burns the wallet.',
+  'vibe.habits.h2.title': 'Different keys for different tools',
+  'vibe.habits.h2.body':
+    'Cursor tab-complete uses a key restricted to gpt-5.1-codex-mini. Long sessions use a key with claude-sonnet-4-6 only. Cross-tool incidents stop being your problem.',
+  'vibe.habits.h3.title': 'Watch the dashboard once a day',
+  'vibe.habits.h3.body':
+    'The console shows daily/weekly/monthly burn against your caps. Three minutes a day is enough to catch any drift before it becomes a charge.',
+  'vibe.habits.h4.title': 'Use the cheap model first',
+  'vibe.habits.h4.body':
+    'For pair-programming chat, deepseek-chat is 100x cheaper than Claude and good enough 90% of the time. Save Sonnet for the hard refactors.',
+  'vibe.cta.heading': 'Stop renting an editor.',
+  'vibe.cta.sub':
+    'You already pay for Claude Pro and Cursor Pro. Nexa removes the third bill — keep your tools, point them here.',
+  'vibe.cta.primary': 'Start in 30 seconds',
+  'vibe.cta.docs': 'Read the Claude Code guide',
+
+  // enterprise
+  'ent.hero.badge': 'For teams of 5+',
+  'ent.hero.title.lead': 'Enterprise',
+  'ent.hero.title.tail': 'plans, custom contracts, real humans on email.',
+  'ent.hero.pitch':
+    'If you need invoiced billing, a stricter SLA, or a private deployment of the gateway, talk to us. We respond within one business day.',
+  'ent.hero.cta.email': 'Email',
+  'ent.hero.cta.pricing': 'See public pricing',
+  'ent.offerings.heading': 'What enterprise plans add',
+  'ent.offer.team.title': 'Team workspaces',
+  'ent.offer.team.desc':
+    'Shared wallet, role-scoped admin (operator / billing / member), per-member API keys, audit log of every config change.',
+  'ent.offer.privacy.title': 'Strict zero-retention mode',
+  'ent.offer.privacy.desc':
+    'Prompt and completion bodies redacted from all internal logs. Only token counts, model id, and HTTP status survive — enough for billing, nothing else.',
+  'ent.offer.sla.title': '99.9% uptime SLA',
+  'ent.offer.sla.desc':
+    'Credits issued automatically against monthly invoice when /v1/* dips below 99.9% for the calendar month. Status page is the source of truth.',
+  'ent.offer.invoice.title': 'Invoiced billing',
+  'ent.offer.invoice.desc':
+    'Monthly statement with usage by model, NET-30 terms, fapiao on request (CN). USD or CNY at the month-end FX rate.',
+  'ent.honest.heading': 'What we do not pretend to be',
+  'ent.honest.intro':
+    'A small team building an honest gateway. The list below is what we will not claim until it is true.',
+  'ent.honest.deploy.title': 'Single-region deployment, today',
+  'ent.honest.deploy.body':
+    'GCP asia-east1 (Taiwan). If your traffic is in EU/US and you need a regional deploy, we can stand one up under contract — but it is not a click.',
+  'ent.honest.audit.title': 'No SOC 2 / no ISO 27001',
+  'ent.honest.audit.body':
+    'We have not gone through formal certification. The architecture is auditable (open source under MIT, AES-256-GCM at rest, no prompt logging) but we are not on a Vanta dashboard yet.',
+  'ent.honest.iso.title': 'No HIPAA / GDPR DPA out-of-the-box',
+  'ent.honest.iso.body':
+    'We will sign a DPA on request. We have not staffed a privacy lawyer to maintain a standing one.',
+  'ent.cta.heading': 'Ready to talk?',
+  'ent.cta.sub':
+    'Tell us your team size, monthly token volume, and what is missing from the public plan. We will reply with a quote.',
+  'ent.cta.button': 'Email sales@xxflk.cn',
 
   // pricing
   'pricing.savings': 'Save {pct}%',
@@ -1363,6 +1545,8 @@ export const zh: Dict = {
   'footer.product': '产品',
   'footer.legal': '协议',
   'footer.account': '账号',
+  'footer.status': '状态',
+  'footer.compare': '对比 OpenRouter',
   'footer.terms': '用户协议',
   'footer.privacy': '隐私协议',
   'footer.disclaimer': '独立运营的中转网关 —— 非 Anthropic / OpenAI 官方服务。',
@@ -1480,6 +1664,171 @@ export const zh: Dict = {
   'docs.sdk.tryit.waiting': '等待首个 token…',
   'docs.sdk.tryit.err.noKey': '请先粘贴 sk-xxf-... 的 Key',
   'docs.read': '阅读',
+
+  // status page
+  'status.title': '服务状态',
+  'status.subtitle': '对 Nexa 网关的实时探活，每 30 秒自动刷新。',
+  'status.banner.ok': '所有系统运行正常',
+  'status.banner.degraded': '降级中 —— 排查中',
+  'status.banner.subtitle': '探活完成；网关、数据库、缓存均响应。',
+  'status.uptime': '运行时长',
+  'status.probeLatency': '探活延迟',
+  'status.component.api': 'API 网关',
+  'status.component.unreachable': '不可达',
+  'status.providers.heading': '上游厂商',
+  'status.providers.subtitle': 'Live = 已配 Key 且未暂停；Pool = Claude OAuth 共享池服务；Pending = 暂无 Key（后续接入）。',
+  'status.providers.models': '个模型',
+  'status.state.pool': 'OAuth 池',
+  'status.state.live': '在线',
+  'status.state.pending': '待接入',
+  'status.refreshing': '每 30 秒自动刷新',
+  'status.refreshNow': '立即刷新',
+
+  // vs / openrouter compare
+  'vs.title.lead': '为开发者打造的中转',
+  'vs.title.tail': '—— 与 OpenRouter 正面对比。',
+  'vs.subtitle':
+    '两家做的是同一件事：一把 Key 调多家模型。我们把用户最常问的问题挑出来诚实回答。如果 OpenRouter 更适合你，我们会直接说。',
+  'vs.tldr.markup.big': '15% 折',
+  'vs.tldr.markup.small': '相对官方价的全模型折扣。OpenRouter 反向加 5%。',
+  'vs.tldr.claude.big': 'Claude 池',
+  'vs.tldr.claude.small': 'claude-* 走 OAuth 订阅池路由，比官方 API 便宜约一半。',
+  'vs.tldr.protocol.big': '双协议',
+  'vs.tldr.protocol.small': '所有模型都同时支持原生 /v1/messages 与 /v1/chat/completions。',
+  'vs.table.feature': '能力',
+  'vs.row.markup.feature': '相对官方价的加价',
+  'vs.row.markup.detail': '中转按上游官方价基础上收取的费率。',
+  'vs.row.markup.nexa': '−15%（更便宜）',
+  'vs.row.claudePool.feature': 'Claude OAuth 共享池',
+  'vs.row.claudePool.detail':
+    'claude-* 流量路由到 Claude Code 订阅账号，比官方 API 便宜约一半。池子深度限制并发。',
+  'vs.row.claudePool.nexa': '已上线',
+  'vs.row.protocol.feature': '协议支持',
+  'vs.row.protocol.detail':
+    '原生 Anthropic /v1/messages（多 block、tool_use、prompt cache）+ OpenAI /v1/chat/completions，目录里所有模型都能跑两种协议。',
+  'vs.row.protocol.nexa': 'Anthropic + OpenAI',
+  'vs.row.welcome.feature': '注册赠金',
+  'vs.row.welcome.detail': '注册即送，无需绑卡。',
+  'vs.row.privacy.feature': 'Prompt 日志',
+  'vs.row.privacy.detail':
+    '是否在服务端持久化 prompt 与回复内容。Token 数与计费记录始终保留。',
+  'vs.row.privacy.nexa': '零留存',
+  'vs.row.privacy.them': '账号级 opt-in',
+  'vs.row.caps.feature': '每 Key 日/周/月限额',
+  'vs.row.caps.detail':
+    '中转层硬性 $ 限额。超额直接 402，不会转发到上游。能在 agent 失控前止损。',
+  'vs.row.caps.nexa': '内置，Redis 后端',
+  'vs.row.cache.feature': 'Anthropic prompt 缓存',
+  'vs.row.cache.detail':
+    'system prompt + tool 定义服务端缓存。cache_read tokens 按输入约 10% 计费。',
+  'vs.row.cache.nexa': 'cache_read 10%、cache_creation 125%',
+  'vs.row.cache.them': '部分线路被绕过',
+  'vs.row.providers.feature': '上游厂商',
+  'vs.row.providers.detail': '一把 Key 能打通的厂商数。两家都在持续增加。',
+  'vs.row.providers.nexa': '9 家（精选）',
+  'vs.row.providers.them': '60+（全索引）',
+  'vs.row.payments.feature': '充值方式',
+  'vs.row.payments.detail': '钱包充值通道。中国大陆：兑换码（支付宝/微信）。',
+  'vs.row.payments.nexa': '支付宝/微信兑换码',
+  'vs.row.uptime.feature': '公开状态页',
+  'vs.row.uptime.detail': '对网关、DB、缓存的实时探活。',
+  'vs.when.nexa.title': '选 Nexa 的场景',
+  'vs.when.nexa.b1': '· Claude Code / Cline / Cursor 是你日常主力 —— OAuth 池就是为你准备的。',
+  'vs.when.nexa.b2': '· 想给每把 Key 设 $ 限额，避免失控的 agent 一夜烧 $200。',
+  'vs.when.nexa.b3': '· 用支付宝 / 微信兑换码充值（我们支持，OpenRouter 不行）。',
+  'vs.when.nexa.b4': '· 真的在用 Anthropic prompt 缓存，需要中转把 cache_control 透传。',
+  'vs.when.them.title': '选 OpenRouter 的场景',
+  'vs.when.them.b1': '· 需要某个我们暂未接入的模型（我们做精选，他们做全索引）。',
+  'vs.when.them.b2': '· 只想用加密货币 / Stripe 充值。',
+  'vs.when.them.b3': '· 流量从不打 Claude —— OAuth 池对你不省钱。',
+  'vs.cta.try': '免费试用 Nexa —— $5 注册赠金',
+  'vs.cta.pricing': '查看模型价格',
+  'vs.disclaimer': 'OpenRouter 价格基于 openrouter.ai 发布的费率；签付费计划前请自行核对。',
+
+  // vibe-coding landing
+  'vibe.hero.badge': '为 Claude Code · Cline · Cursor · OpenCode 用户准备',
+  'vibe.hero.title.lead': 'Vibe-code',
+  'vibe.hero.title.tail': '一把 Key、半价账单、整夜不断。',
+  'vibe.hero.pitch':
+    'Nexa 把你现有的 AI 编码 agent 指向 Claude OAuth 共享账号池 —— 同样的模型、同样的协议，成本约一半。长会话不会撞到单账号速率限制，因为我们在池子内轮转分发。',
+  'vibe.hero.cta': '领取 Key —— $5 免费额度',
+  'vibe.hero.skip': '直接看配置',
+  'vibe.stat.discount': '相对 Anthropic API 在 claude-* 模型上的省钱幅度',
+  'vibe.stat.session': '小时长会话也不卡 rate-limit',
+  'vibe.stat.oneKey': '兼容任何说 OpenAI 或 Anthropic 协议的编码 agent',
+  'vibe.benefits.heading': '围绕你实际写代码的方式打造',
+  'vibe.benefit.cheap.title': 'claude-* 默认更便宜',
+  'vibe.benefit.cheap.desc':
+    'OAuth 账号池按 API 官方价约 50% 提供 Claude Sonnet / Opus。没有配额游戏，没有套餐分级。',
+  'vibe.benefit.context.title': 'Prompt 缓存原样透传',
+  'vibe.benefit.context.desc':
+    'cache_control header 原样透传。cache_read tokens 按输入约 10% 计费，与官方 API 完全一致。',
+  'vibe.benefit.long.title': '为马拉松设计',
+  'vibe.benefit.long.desc':
+    '单账号速率限制只打到单个账号，不会打断你的会话。池子化解 429，8 小时重构不会卡顿。',
+  'vibe.benefit.tools.title': 'Tool call 一字不差',
+  'vibe.benefit.tools.desc':
+    'tool_use、tool_result、tool_choice 字节级透传。在上游能跑的 agent，到 Nexa 也能跑。',
+  'vibe.configs.heading': '即插即用配置',
+  'vibe.configs.intro':
+    '挑你用的工具，粘贴片段，把 sk-xxf-... 替换成 /console 里签发的 Key，搞定。',
+  'vibe.configs.footnote': '更多工具、SDK 示例、踩坑见',
+  'vibe.habits.heading': '四个让账单可预测的习惯',
+  'vibe.habits.intro': '这些都是 Nexa 提供的控制项 —— 大平台要么收费、要么藏起来。',
+  'vibe.habits.h1.title': '给每把 Key 钉一个日限额',
+  'vibe.habits.h1.body':
+    '新实验默认 $1/天。看到真实流量后再放开。中转直接返 402，不会转发到上游 —— 任何"失控 agent 烧光钱包"的剧本都不存在。',
+  'vibe.habits.h2.title': '不同工具用不同 Key',
+  'vibe.habits.h2.body':
+    'Cursor tab-complete 用一把只允许 gpt-5.1-codex-mini 的 Key；长会话用一把只允许 claude-sonnet-4-6 的 Key。跨工具事故不再是你的问题。',
+  'vibe.habits.h3.title': '每天扫一眼仪表盘',
+  'vibe.habits.h3.body':
+    '控制台展示日/周/月相对限额的消耗速度。一天三分钟，足以在偏差变成账单前发现它。',
+  'vibe.habits.h4.title': '先用便宜的',
+  'vibe.habits.h4.body':
+    'pair-programming 闲聊用 deepseek-chat 比 Claude 便宜 100 倍，90% 场景质量够用。Sonnet 留给硬重构。',
+  'vibe.cta.heading': '别再租编辑器了。',
+  'vibe.cta.sub':
+    'Claude Pro 和 Cursor Pro 你已经买了。Nexa 把第三张账单去掉 —— 工具留着，指过来就行。',
+  'vibe.cta.primary': '30 秒开始',
+  'vibe.cta.docs': '看 Claude Code 配置指南',
+
+  // enterprise
+  'ent.hero.badge': '面向 5 人以上团队',
+  'ent.hero.title.lead': '企业版',
+  'ent.hero.title.tail': '套餐、定制合同，邮件由真人回复。',
+  'ent.hero.pitch':
+    '如果需要发票化结算、更严格的 SLA、或网关私有部署 —— 直接邮件来谈。一个工作日内回复。',
+  'ent.hero.cta.email': '邮件联系',
+  'ent.hero.cta.pricing': '查看公开价格',
+  'ent.offerings.heading': '企业版多了什么',
+  'ent.offer.team.title': '团队工作空间',
+  'ent.offer.team.desc':
+    '共享钱包、按角色划分的管理员（operator / billing / member）、成员级 API Key、所有配置变更的 audit log。',
+  'ent.offer.privacy.title': '严格零留存模式',
+  'ent.offer.privacy.desc':
+    'Prompt 与 completion 内容在内部日志中全部脱敏。只保留 token 计数、模型 ID、HTTP 状态码 —— 足够计费，仅此而已。',
+  'ent.offer.sla.title': '99.9% 可用性 SLA',
+  'ent.offer.sla.desc':
+    '/v1/* 月度低于 99.9% 时按比例自动开票冲减。状态页是事实来源。',
+  'ent.offer.invoice.title': '发票化结算',
+  'ent.offer.invoice.desc':
+    '月度账单按模型分项、NET-30 账期、可开发票（CN）。USD 或按月末汇率结算的 CNY。',
+  'ent.honest.heading': '我们不假装具备的能力',
+  'ent.honest.intro': '小团队，做诚实的中转。下面是"还没做到"的清单。',
+  'ent.honest.deploy.title': '当前单 region 部署',
+  'ent.honest.deploy.body':
+    'GCP asia-east1（台湾）。流量在欧美且需要本地部署，可以按合同搭建 —— 但这不是点一下的事。',
+  'ent.honest.audit.title': '尚未 SOC 2 / ISO 27001',
+  'ent.honest.audit.body':
+    '没走正式认证流程。架构本身可审计（MIT 开源、AES-256-GCM 静态加密、零 prompt 日志），但还没进 Vanta dashboard。',
+  'ent.honest.iso.title': '默认无 HIPAA / GDPR DPA',
+  'ent.honest.iso.body':
+    'DPA 可按需签署。但还没专门请一位隐私律师维护标准模板。',
+  'ent.cta.heading': '想聊一聊？',
+  'ent.cta.sub':
+    '告诉我们团队规模、月 token 量、以及公开套餐缺什么。我们会带着报价回信。',
+  'ent.cta.button': '邮件 sales@xxflk.cn',
 
   // pricing
   'pricing.savings': '节省 {pct}%',

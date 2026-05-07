@@ -1,0 +1,44 @@
+# Nexa
+
+> Drop-in OpenAI / Anthropic API gateway. One key, 9 providers (Claude, OpenAI, DeepSeek, Qwen, Kimi, GLM, Doubao, Mistral, Gemini), 15% off official rates, with a Claude OAuth account pool that prices Claude Sonnet/Opus at ~50% of the API.
+
+Nexa is a relay for AI coding agents (Claude Code, Cline, Cursor, OpenCode). The gateway accepts both Anthropic-shaped /v1/messages and OpenAI-shaped /v1/chat/completions on every model. Prompt caching, tool calls, and streaming are byte-passthrough. Wallet-based billing with per-key day/week/month spending caps. Zero prompt retention server-side.
+
+## Docs
+
+- [Getting started](https://claude.xxflk.cn/docs): tool-by-tool integration guides
+- [Claude Code](https://claude.xxflk.cn/docs/claude-code): the primary client config
+- [Cline](https://claude.xxflk.cn/docs/cline): VSCode extension setup
+- [Cursor](https://claude.xxflk.cn/docs/cursor): editor config in OpenAI-compat mode
+- [Raw API](https://claude.xxflk.cn/docs/api): curl examples for /v1/messages and /v1/chat/completions
+- [SDK setup](https://claude.xxflk.cn/docs/sdk): OpenAI / Anthropic SDK config in Python and Node, plus an in-page Try-it
+- [API Reference](https://claude.xxflk.cn/docs/api-reference): interactive Scalar reference, OpenAPI 3.1
+- [Cost guide](https://claude.xxflk.cn/docs/cost-guide): model picking + charging formula
+
+## OpenAPI
+
+- [openapi.json](https://claude.xxflk.cn/openapi.json): full OpenAPI 3.1 spec for /v1/* endpoints
+
+## Marketing pages
+
+- [Pricing](https://claude.xxflk.cn/pricing): public per-model rates + volume rebate tiers
+- [vs OpenRouter](https://claude.xxflk.cn/vs/openrouter): head-to-head comparison
+- [Vibe coding](https://claude.xxflk.cn/vibe-coding): landing page for Claude Code / Cline / Cursor users
+- [Enterprise](https://claude.xxflk.cn/enterprise): team plans, SLA, invoiced billing
+- [Status](https://claude.xxflk.cn/status): live probes against gateway, DB, cache, and per-provider state
+
+## Public endpoints
+
+- `GET /healthz`: liveness probe (always 200 if process is up)
+- `GET /readyz`: readiness probe with DB + Redis subchecks
+- `GET /version`: build version + commit
+- `GET /v1/status`: aggregated status feed used by /status — JSON, cache-control 15s
+- `GET /v1/catalog`: provider-grouped model catalog with prices, cache-control 60s
+- `GET /v1/pricing`: flat list of all model prices, cache-control 60s
+
+## Quotas and pricing
+
+- 15% discount over official prices on every model
+- $5 welcome credit on signup (no card required)
+- Volume rebates: Bronze (3% on $500+/mo) · Silver (5% on $2k+/mo) · Gold (7% on $5k+/mo) · Platinum (10% on $20k+/mo)
+- Per-key caps: day / week / month, in USD; gateway returns 402 instead of forwarding once cap is hit

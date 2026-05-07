@@ -25,6 +25,16 @@ export function MarketingFooter() {
           <ul className="space-y-1 text-sm">
             <li><Link href={'/pricing' as never} className="text-muted-foreground hover:text-foreground">{t('nav.pricing')}</Link></li>
             <li><Link href={'/docs' as never} className="text-muted-foreground hover:text-foreground">{t('nav.docs')}</Link></li>
+            <li>
+              <Link href={'/status' as never} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                </span>
+                {t('footer.status')}
+              </Link>
+            </li>
+            <li><Link href={'/vs/openrouter' as never} className="text-muted-foreground hover:text-foreground">{t('footer.compare')}</Link></li>
           </ul>
         </div>
         <div>
