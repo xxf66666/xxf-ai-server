@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import { Loader2, Play, Square } from 'lucide-react';
 import { useT } from '../../../lib/i18n/context';
 import { Code, DocLayout, H2, H3 } from '../../../components/DocLayout';
 
@@ -16,11 +18,203 @@ function Lang({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Three cheap-to-mid models so the demo can't cost more than a cent
+// even if abused. The /v1/chat/completions endpoint already uses the
+// caller's own key for billing — there is no shared demo quota.
+const TRY_IT_MODELS = ['deepseek-chat', 'gpt-5', 'claude-sonnet-4-6'];
+
+function TryIt() {
+  const t = useT();
+  const [model, setModel] = useState(TRY_IT_MODELS[0]);
+  const [apiKey, setApiKey] = useState('');
+  const [prompt, setPrompt] = useState('Write a 4-line haiku about prompt caching.');
+  const [output, setOutput] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [running, setRunning] = useState(false);
+  const [controller, setController] = useState<AbortController | null>(null);
+
+  async function run() {
+    if (running) return;
+    if (!apiKey.trim()) {
+      setError(t('docs.sdk.tryit.err.noKey'));
+      return;
+    }
+    setOutput('');
+    setError(null);
+    const ac = new AbortController();
+    setController(ac);
+    setRunning(true);
+    try {
+      const res = await fetch(`${BASE}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${apiKey.trim()}`,
+        },
+        body: JSON.stringify({
+          model,
+          stream: true,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+        signal: ac.signal,
+      });
+      if (!res.ok || !res.body) {
+        const txt = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status} — ${txt.slice(0, 220) || res.statusText}`);
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      let acc = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let idx;
+        while ((idx = buf.indexOf('\n\n')) >= 0) {
+          const event = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+          for (const line of event.split('\n')) {
+            if (!line.startsWith('data:')) continue;
+            const data = line.slice(5).trim();
+            if (data === '[DONE]') continue;
+            try {
+              const j = JSON.parse(data);
+              const delta = j.choices?.[0]?.delta?.content ?? '';
+              if (delta) {
+                acc += delta;
+                setOutput(acc);
+              }
+            } catch {
+              // ignore non-JSON keepalive lines
+            }
+          }
+        }
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!msg.includes('aborted')) setError(msg);
+    } finally {
+      setRunning(false);
+      setController(null);
+    }
+  }
+
+  function stop() {
+    controller?.abort();
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/20 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <div className="text-sm font-semibold">{t('docs.sdk.tryit.title')}</div>
+          <div className="text-xs text-muted-foreground">{t('docs.sdk.tryit.subtitle')}</div>
+        </div>
+        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+          live
+        </span>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block text-xs">
+          <span className="mb-1 block font-medium text-muted-foreground">
+            {t('docs.sdk.tryit.field.model')}
+          </span>
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            disabled={running}
+            className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 font-mono text-xs"
+          >
+            {TRY_IT_MODELS.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block text-xs">
+          <span className="mb-1 block font-medium text-muted-foreground">
+            {t('docs.sdk.tryit.field.key')}
+          </span>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            disabled={running}
+            placeholder="sk-xxf-..."
+            className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 font-mono text-xs"
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </label>
+      </div>
+
+      <label className="mt-3 block text-xs">
+        <span className="mb-1 block font-medium text-muted-foreground">
+          {t('docs.sdk.tryit.field.prompt')}
+        </span>
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          disabled={running}
+          rows={2}
+          className="w-full resize-y rounded-md border border-border bg-background px-2.5 py-1.5 text-xs"
+        />
+      </label>
+
+      <div className="mt-3 flex items-center gap-2">
+        {!running ? (
+          <button
+            type="button"
+            onClick={run}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Play className="h-3.5 w-3.5" />
+            {t('docs.sdk.tryit.run')}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={stop}
+            className="inline-flex items-center gap-1.5 rounded-md bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20"
+          >
+            <Square className="h-3.5 w-3.5" />
+            {t('docs.sdk.tryit.stop')}
+          </button>
+        )}
+        <span className="text-[10px] text-muted-foreground">{t('docs.sdk.tryit.note')}</span>
+      </div>
+
+      {error && (
+        <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+          {error}
+        </div>
+      )}
+
+      {(output || running) && (
+        <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-background p-3 font-mono text-xs leading-relaxed">
+          {output || (
+            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              {t('docs.sdk.tryit.waiting')}
+            </span>
+          )}
+        </pre>
+      )}
+    </div>
+  );
+}
+
 export default function SdkPage() {
   const t = useT();
   return (
     <DocLayout title={t('docs.sdk.title')}>
       <p>{t('docs.sdk.intro')}</p>
+
+      <TryIt />
 
       <H2>{t('docs.sdk.auth.heading')}</H2>
       <p>

@@ -636,6 +636,16 @@ export const en = {
   'docs.sdk.migration.heading': 'Migrating an existing project',
   'docs.sdk.migration.body':
     'If you already use the official OpenAI library, switching to Nexa is one line:',
+  'docs.sdk.tryit.title': 'Try it live',
+  'docs.sdk.tryit.subtitle': 'Real call to /v1/chat/completions — billed to the key you paste.',
+  'docs.sdk.tryit.field.model': 'Model',
+  'docs.sdk.tryit.field.key': 'API key',
+  'docs.sdk.tryit.field.prompt': 'Prompt',
+  'docs.sdk.tryit.run': 'Run',
+  'docs.sdk.tryit.stop': 'Stop',
+  'docs.sdk.tryit.note': 'Streaming · same-origin · key never leaves the browser tab.',
+  'docs.sdk.tryit.waiting': 'waiting for first token…',
+  'docs.sdk.tryit.err.noKey': 'paste an sk-xxf-... key first',
   'docs.read': 'Read',
 
   // pricing
@@ -1459,6 +1469,16 @@ export const zh: Dict = {
   'docs.sdk.migration.heading': '迁移现有项目',
   'docs.sdk.migration.body':
     '如果已经在用官方 OpenAI 库，切到 Nexa 只改一行：',
+  'docs.sdk.tryit.title': '在线试调',
+  'docs.sdk.tryit.subtitle': '真实调用 /v1/chat/completions —— 按你粘贴的 Key 计费。',
+  'docs.sdk.tryit.field.model': '模型',
+  'docs.sdk.tryit.field.key': 'API Key',
+  'docs.sdk.tryit.field.prompt': '提示词',
+  'docs.sdk.tryit.run': '运行',
+  'docs.sdk.tryit.stop': '停止',
+  'docs.sdk.tryit.note': '流式 · 同源请求 · Key 不会离开当前标签页。',
+  'docs.sdk.tryit.waiting': '等待首个 token…',
+  'docs.sdk.tryit.err.noKey': '请先粘贴 sk-xxf-... 的 Key',
   'docs.read': '阅读',
 
   // pricing
