@@ -512,6 +512,9 @@ export const en = {
   'docs.index.cursor.desc': 'Cursor editor — OpenAI-compat mode.',
   'docs.index.api.title': 'Raw API',
   'docs.index.api.desc': 'curl examples for /v1/messages and /v1/chat/completions.',
+  'docs.index.reference.title': 'API Reference',
+  'docs.index.reference.desc':
+    'Full OpenAPI 3.1 spec for every public endpoint, with try-it-now console and language-tabbed code samples.',
   'docs.read': 'Read',
 
   // pricing
@@ -1233,6 +1236,8 @@ export const zh: Dict = {
   'docs.index.cursor.desc': 'Cursor 编辑器 —— OpenAI 兼容模式接入。',
   'docs.index.api.title': '原生 API',
   'docs.index.api.desc': '/v1/messages 和 /v1/chat/completions 的 curl 示例。',
+  'docs.index.reference.title': 'API 参考',
+  'docs.index.reference.desc': '所有公开端点的 OpenAPI 3.1 规范、可直接试调的控制台和多语言代码片段。',
   'docs.read': '阅读',
 
   // pricing
