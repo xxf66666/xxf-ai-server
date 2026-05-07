@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, Cpu, Gauge, Receipt, Tag, Sparkles } from 'lucide-react';
+import { ArrowRight, Cpu, Gauge, Lock, Receipt, ShieldCheck, Sparkles, Tag, Zap } from 'lucide-react';
 import { Instrument_Serif } from 'next/font/google';
 import { apiFetch } from '../lib/api';
 import { useT } from '../lib/i18n/context';
@@ -179,6 +179,42 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* DeepSeek value-prop strip — single most cost-effective coding
+          model in the catalog right now. Lifts a sub-cent example
+          straight onto the home page so visitors see the "$ saved"
+          story without bouncing to /pricing. */}
+      <section className="border-t border-border bg-gradient-to-r from-emerald-50 via-background to-violet-50/40">
+        <div className="container mx-auto max-w-6xl px-4 py-10">
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/30 to-teal-500/20 text-emerald-700">
+                <Zap className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold">{t('home.deepseek.title')}</div>
+                <div className="text-xs text-muted-foreground">
+                  {t('home.deepseek.desc')}
+                </div>
+              </div>
+            </div>
+            <div className="ml-auto flex flex-wrap items-center gap-3">
+              <code className="rounded-md border border-border bg-background px-2.5 py-1 font-mono text-[11px]">
+                model: deepseek-chat
+              </code>
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-800">
+                $0.119 / 1M input
+              </span>
+              <Link
+                href={'/docs/api-reference' as never}
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+              >
+                {t('home.deepseek.tryIt')} <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features */}
       <section className="border-t border-border bg-gradient-to-b from-muted/30 via-background to-background">
         <div className="container mx-auto max-w-6xl px-4 py-20">
@@ -288,6 +324,31 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Trust band — surfaces the security choices that are already
+          live (AES-GCM token storage, no prompt logging) as marketing
+          rather than buried in /docs/security. */}
+      <section className="border-t border-border bg-muted/20">
+        <div className="container mx-auto max-w-6xl px-4 py-12">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <TrustItem
+              Icon={Lock}
+              title={t('home.trust.zeroLog.title')}
+              desc={t('home.trust.zeroLog.desc')}
+            />
+            <TrustItem
+              Icon={ShieldCheck}
+              title={t('home.trust.encryption.title')}
+              desc={t('home.trust.encryption.desc')}
+            />
+            <TrustItem
+              Icon={Receipt}
+              title={t('home.trust.transparency.title')}
+              desc={t('home.trust.transparency.desc')}
+            />
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="border-t border-border">
         <div className="container mx-auto max-w-5xl px-4 py-20">
@@ -357,6 +418,28 @@ function Stat({
         {big}
       </div>
       <div className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{small}</div>
+    </div>
+  );
+}
+
+function TrustItem({
+  Icon,
+  title,
+  desc,
+}: {
+  Icon: typeof Lock;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="flex gap-3 rounded-xl border border-border bg-background p-4">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="space-y-0.5">
+        <div className="text-sm font-semibold">{title}</div>
+        <div className="text-xs leading-relaxed text-muted-foreground">{desc}</div>
+      </div>
     </div>
   );
 }

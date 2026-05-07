@@ -477,6 +477,19 @@ export const en = {
   'home.stats.welcome': 'Welcome credit',
   'home.stats.latency': 'Added latency',
   'home.providersStrip': 'One key, every model',
+  'home.deepseek.title': 'Coding cheap as dirt',
+  'home.deepseek.desc':
+    'DeepSeek V3 lands at 1/100th the cost of Claude Opus per token. Same OpenAI client, just swap the model id.',
+  'home.deepseek.tryIt': 'See it in the API reference',
+  'home.trust.zeroLog.title': 'Zero prompt retention',
+  'home.trust.zeroLog.desc':
+    'Request bodies are forwarded byte-for-byte and never written to disk. Only token counts and metadata land in usage_log.',
+  'home.trust.encryption.title': 'AES-256-GCM at rest',
+  'home.trust.encryption.desc':
+    'OAuth tokens, provider API keys and 2FA secrets are sealed with the same envelope and a 32-byte key held in env, never DB.',
+  'home.trust.transparency.title': 'Transparent billing',
+  'home.trust.transparency.desc':
+    'Per-request input / cache_read / output tokens recorded in micro-USD. Every charge is auditable in /console/usage.',
   'home.feat.title': 'What you get',
   'home.feat.cheap.title': '15% off everything',
   'home.feat.cheap.desc': 'We pool subscriptions so you pay less than the official API. Always.',
@@ -515,6 +528,66 @@ export const en = {
   'docs.index.reference.title': 'API Reference',
   'docs.index.reference.desc':
     'Full OpenAPI 3.1 spec for every public endpoint, with try-it-now console and language-tabbed code samples.',
+  'docs.index.cost.title': 'Cost guide',
+  'docs.index.cost.desc':
+    'Which model for which task. A copy-paste cheat sheet plus the formulas behind every charge.',
+
+  // cost guide content
+  'docs.cost.title': 'Choose the right model for the job',
+  'docs.cost.intro':
+    'Nine providers, ~30 models, prices spanning 1000x. Picking right matters more than you\'d think — a session that costs $0.40 on Claude Opus can be $0.004 on DeepSeek for similar output. This page is the operator\'s cheat sheet.',
+  'docs.cost.heading.cheatsheet': '6-row cheat sheet',
+  'docs.cost.cheatsheet.intro':
+    'Pick by the dominant trait of your task; everything below is averaged from real Nexa traffic.',
+  'docs.cost.col.task': 'Task',
+  'docs.cost.col.pick': 'Pick',
+  'docs.cost.col.why': 'Why',
+  'docs.cost.col.cost': '/req',
+  'docs.cost.row.tabComplete': 'Editor tab-complete',
+  'docs.cost.row.tabComplete.why': 'Tiny prompts, latency-sensitive. Cheap codex tier wins.',
+  'docs.cost.row.shortChat': 'Short Q&A in chat',
+  'docs.cost.row.shortChat.why': 'Short input, short output. DeepSeek is 100× cheaper than Claude for the same quality.',
+  'docs.cost.row.refactor': 'Multi-file refactor',
+  'docs.cost.row.refactor.why': 'Large prompt + tool use. Sonnet handles repo-scale context with prompt caching.',
+  'docs.cost.row.bigContext': '10k-line code review',
+  'docs.cost.row.bigContext.why': 'Kimi K2 has 1M context and is half the price of Claude Sonnet at that tier.',
+  'docs.cost.row.architecture': 'Architecture / hard reasoning',
+  'docs.cost.row.architecture.why': 'Worth the spend when correctness pays for itself. Opus stays the bar.',
+  'docs.cost.row.reasoning': 'Math / chain-of-thought',
+  'docs.cost.row.reasoning.why': 'DeepSeek-Reasoner is the best $/quality on reasoning right now.',
+  'docs.cost.cheatsheet.footnote':
+    'Per-request costs assume cache-warmed sessions where appropriate. Cold first calls cost 1.5–2x because cache_creation is billed at 125% of input rate.',
+  'docs.cost.heading.byProvider': 'Notes per provider',
+  'docs.cost.byProvider.intro':
+    'Each provider behaves a bit differently — these are the gotchas worth knowing before you commit a workflow.',
+  'docs.cost.deepseek.tag': 'cheapest dollar-per-token in the catalog',
+  'docs.cost.deepseek.desc':
+    'DeepSeek V3 is the default workhorse for short turns. Same OpenAI-compat shape; just route through Nexa.',
+  'docs.cost.claude.tag': 'best for tool-heavy agents',
+  'docs.cost.claude.desc':
+    'Claude is the only provider where Nexa gets a discount via the OAuth pool — Sonnet shows up at half-price-ish vs. anywhere else. The trade-off: pool depth caps concurrency.',
+  'docs.cost.claude.tip':
+    'Tip: Claude Code sessions cache the system prompt + tool defs. Subsequent calls in the same session are 8–10x cheaper than the first because they hit cache_read.',
+  'docs.cost.kimi.tag': '1M context, agentic',
+  'docs.cost.kimi.desc':
+    'Kimi K2 is the right call when context dominates output (e.g. 50k+ token codebase analysis). Output quality is on par with Sonnet for Chinese-heavy text.',
+  'docs.cost.cn.tag': 'Chinese SOTA, low latency in CN',
+  'docs.cost.cn.desc':
+    'Qwen 3 / GLM 4.6 / Doubao Pro are price-competitive with DeepSeek and serve from PRC datacenters. Pick when your end users are in China and you care about p95 latency.',
+  'docs.cost.heading.budgeting': 'Don\'t bleed money — three habits',
+  'docs.cost.budgeting.intro':
+    'Three controls Nexa exposes that bigger gateways charge for or don\'t have at all:',
+  'docs.cost.budgeting.b1':
+    'Set a per-key daily cap in the console. New experiments default to $1/day; scale up after the first day of real traffic.',
+  'docs.cost.budgeting.b2':
+    'Restrict each key\'s allowed_models. A key wired into Cursor tab-complete should not have access to claude-opus-4-7.',
+  'docs.cost.budgeting.b3':
+    'Watch the dashboard\'s "balance low" banner. Top up before zero, not after — depleted balance returns 402 immediately.',
+  'docs.cost.heading.formulas': 'Charging formula',
+  'docs.cost.formulas.intro':
+    'For every relayed call, Nexa applies this exact formula. Cache fields default to 0 for providers that don\'t support caching.',
+  'docs.cost.formulas.note':
+    'Recorded to micro-USD precision in usage_log; balance debit and Redis spending counters update in the same transaction so a drift > 1¢ is impossible without a logged error.',
   'docs.read': 'Read',
 
   // pricing
@@ -1202,6 +1275,15 @@ export const zh: Dict = {
   'home.stats.welcome': '新注册赠送',
   'home.stats.latency': '额外延迟',
   'home.providersStrip': '一把 Key，全部模型',
+  'home.deepseek.title': '编程便宜到几乎免费',
+  'home.deepseek.desc': 'DeepSeek V3 每 token 比 Claude Opus 便宜 100 倍。同一个 OpenAI 客户端，改一下 model 字段就行。',
+  'home.deepseek.tryIt': '在 API 文档里试一下',
+  'home.trust.zeroLog.title': '零 Prompt 存储',
+  'home.trust.zeroLog.desc': '请求体逐字节透传，从不落盘。usage_log 只记 token 数和元数据。',
+  'home.trust.encryption.title': 'AES-256-GCM 静态加密',
+  'home.trust.encryption.desc': 'OAuth token、上游 API Key、2FA secret 全部用同一套封装，32 字节密钥只在环境变量里，从不入库。',
+  'home.trust.transparency.title': '透明计费',
+  'home.trust.transparency.desc': '每次请求的输入 / cache_read / 输出 token 精确到 micro-USD 记录。每一笔扣费都能在 /console/usage 查到。',
   'home.feat.title': '为什么选我们',
   'home.feat.cheap.title': '全线 8.5 折',
   'home.feat.cheap.desc': '聚合订阅账号，价格永远比官方 API 便宜。',
@@ -1238,6 +1320,50 @@ export const zh: Dict = {
   'docs.index.api.desc': '/v1/messages 和 /v1/chat/completions 的 curl 示例。',
   'docs.index.reference.title': 'API 参考',
   'docs.index.reference.desc': '所有公开端点的 OpenAPI 3.1 规范、可直接试调的控制台和多语言代码片段。',
+  'docs.index.cost.title': '成本指南',
+  'docs.index.cost.desc': '什么任务该用什么模型 + 计费公式速查表。',
+
+  // cost guide
+  'docs.cost.title': '什么任务用什么模型',
+  'docs.cost.intro': '九家厂商，约 30 个模型，价格跨度 1000 倍。挑对模型比想象中更重要 —— 同样输出 Claude Opus $0.40，DeepSeek 可能只要 $0.004。这页是运营方速查表。',
+  'docs.cost.heading.cheatsheet': '6 行速查表',
+  'docs.cost.cheatsheet.intro': '按任务主导特征挑；下面数据来自 Nexa 真实流量平均值。',
+  'docs.cost.col.task': '任务',
+  'docs.cost.col.pick': '推荐',
+  'docs.cost.col.why': '为什么',
+  'docs.cost.col.cost': '/请求',
+  'docs.cost.row.tabComplete': '编辑器 Tab 补全',
+  'docs.cost.row.tabComplete.why': 'Prompt 短，对延迟敏感。便宜的 codex 档最合适。',
+  'docs.cost.row.shortChat': '对话框短问答',
+  'docs.cost.row.shortChat.why': '输入短输出短。同等质量 DeepSeek 比 Claude 便宜 100 倍。',
+  'docs.cost.row.refactor': '多文件重构',
+  'docs.cost.row.refactor.why': '大 prompt + tool use。Sonnet 配合 prompt cache 处理仓库级上下文最划算。',
+  'docs.cost.row.bigContext': '万行代码评审',
+  'docs.cost.row.bigContext.why': 'Kimi K2 1M 上下文，同档比 Claude Sonnet 便宜一半。',
+  'docs.cost.row.architecture': '架构 / 复杂推理',
+  'docs.cost.row.architecture.why': '正确性比成本重要的场景。Opus 仍是天花板。',
+  'docs.cost.row.reasoning': '数学 / 思维链',
+  'docs.cost.row.reasoning.why': 'DeepSeek-Reasoner 当前在推理类任务上的性价比最高。',
+  'docs.cost.cheatsheet.footnote': '上面单价假设 cache 已预热。冷启动第一次贵 1.5-2 倍（cache_creation 按输入 125% 计费）。',
+  'docs.cost.heading.byProvider': '各厂商提示',
+  'docs.cost.byProvider.intro': '每家厂商行为略有不同 —— 下面是动手前最值得了解的几条。',
+  'docs.cost.deepseek.tag': '每 token 成本最低',
+  'docs.cost.deepseek.desc': 'DeepSeek V3 是短轮次默认主力。OpenAI 兼容格式，只需把 baseURL 指到 Nexa。',
+  'docs.cost.claude.tag': '工具密集 agent 最优',
+  'docs.cost.claude.desc': 'Claude 是 Nexa 唯一通过 OAuth 池拿到折扣的厂商 —— Sonnet 大约比官方便宜一半。代价：池子深度限制并发。',
+  'docs.cost.claude.tip': '提示：Claude Code 会缓存系统提示 + 工具定义。同一 session 后续调用比第一次便宜 8-10 倍（cache_read 命中）。',
+  'docs.cost.kimi.tag': '1M 上下文，agentic',
+  'docs.cost.kimi.desc': 'Kimi K2 适合上下文远大于输出的场景（如 5 万+ token 代码库分析）。中文输出质量与 Sonnet 持平。',
+  'docs.cost.cn.tag': '国产 SOTA，国内低延迟',
+  'docs.cost.cn.desc': 'Qwen 3 / GLM 4.6 / Doubao Pro 价格对标 DeepSeek，由国内 IDC 提供。终端用户在中国大陆且关心 p95 延迟时优先选这几家。',
+  'docs.cost.heading.budgeting': '别烧钱 —— 三个习惯',
+  'docs.cost.budgeting.intro': 'Nexa 提供的三个控制项，大平台要么收费、要么没有：',
+  'docs.cost.budgeting.b1': '在控制台给每把 key 设日限额。新实验默认 $1/天，跑通一天再放开。',
+  'docs.cost.budgeting.b2': '限定每把 key 的 allowed_models。给 Cursor Tab 用的 key 不应该能调 claude-opus-4-7。',
+  'docs.cost.budgeting.b3': '盯仪表盘"余额低"提示。提前充，不要等扣到 0 —— 余额耗尽立刻返 402。',
+  'docs.cost.heading.formulas': '计费公式',
+  'docs.cost.formulas.intro': '每次中转调用 Nexa 都按这个公式计费。不支持缓存的厂商 cache 字段默认为 0。',
+  'docs.cost.formulas.note': '记录精确到 micro-USD 写入 usage_log；余额扣减和 Redis 限额计数器同事务更新，>1 分钱的偏差不会发生（除非有日志可见的错误）。',
   'docs.read': '阅读',
 
   // pricing

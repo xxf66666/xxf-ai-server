@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, Box, Code2, FileCode2, Terminal } from 'lucide-react';
+import { BookOpen, Box, Code2, DollarSign, FileCode2, Terminal } from 'lucide-react';
 import { useT } from '../../lib/i18n/context';
 import { MarketingHeader } from '../../components/MarketingHeader';
 import { MarketingFooter } from '../../components/MarketingFooter';
@@ -24,6 +24,12 @@ const cards: Card[] = [
     icon: FileCode2,
     titleKey: 'docs.index.reference.title',
     descKey: 'docs.index.reference.desc',
+  },
+  {
+    href: '/docs/cost-guide',
+    icon: DollarSign,
+    titleKey: 'docs.index.cost.title',
+    descKey: 'docs.index.cost.desc',
   },
 ];
 
