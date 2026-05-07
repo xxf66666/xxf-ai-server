@@ -528,6 +528,9 @@ export const en = {
   'docs.index.reference.title': 'API Reference',
   'docs.index.reference.desc':
     'Full OpenAPI 3.1 spec for every public endpoint, with try-it-now console and language-tabbed code samples.',
+  'docs.index.sdk.title': 'SDK setup',
+  'docs.index.sdk.desc':
+    'Drop-in OpenAI / Anthropic SDK config (Python + Node), env vars, gotchas.',
   'docs.index.cost.title': 'Cost guide',
   'docs.index.cost.desc':
     'Which model for which task. A copy-paste cheat sheet plus the formulas behind every charge.',
@@ -588,6 +591,51 @@ export const en = {
     'For every relayed call, Nexa applies this exact formula. Cache fields default to 0 for providers that don\'t support caching.',
   'docs.cost.formulas.note':
     'Recorded to micro-USD precision in usage_log; balance debit and Redis spending counters update in the same transaction so a drift > 1¢ is impossible without a logged error.',
+
+  // docs/sdk
+  'docs.sdk.title': 'SDK setup — OpenAI & Anthropic',
+  'docs.sdk.intro':
+    'Nexa is a drop-in replacement for both the OpenAI and Anthropic APIs. Point your existing SDK at the gateway and switch the model id — no code changes beyond the constructor.',
+  'docs.sdk.auth.heading': 'Authentication',
+  'docs.sdk.auth.body1': 'Every request needs',
+  'docs.sdk.auth.body2': 'using a key minted in the console.',
+  'docs.sdk.auth.note.base':
+    '— this single base URL routes all OpenAI-compatible upstreams (DeepSeek, Qwen, Kimi, GLM, Doubao, Mistral, Gemini, OpenAI itself).',
+  'docs.sdk.auth.note.scope':
+    'Each key has an allowed_models list — restrict it to the cheapest model your client actually needs.',
+  'docs.sdk.auth.note.streaming':
+    'Streaming works on every endpoint and is byte-passthrough — no buffering, no re-serialization.',
+  'docs.sdk.openai.heading': 'OpenAI SDK',
+  'docs.sdk.openai.intro':
+    'Use this for DeepSeek, Qwen, Kimi, GLM, Doubao, Mistral, Gemini, OpenAI, and even Claude (model ids are auto-translated to /v1/messages internally).',
+  'docs.sdk.anthropic.heading': 'Anthropic SDK',
+  'docs.sdk.anthropic.intro':
+    'Use this when you need native Anthropic features (multi-block content, prompt caching, tool_use, message_start/stop SSE). Only claude-* model ids work here.',
+  'docs.sdk.envvars.heading': 'Environment-variable cheat sheet',
+  'docs.sdk.envvars.intro':
+    'Most clients respect these vars and need zero code changes once they are set:',
+  'docs.sdk.envvars.col.tool': 'Tool',
+  'docs.sdk.envvars.col.envBase': 'Base URL var',
+  'docs.sdk.envvars.col.envKey': 'API key var',
+  'docs.sdk.gotchas.heading': 'Common gotchas',
+  'docs.sdk.gotcha.baseUrl.title': 'Trailing /v1.',
+  'docs.sdk.gotcha.baseUrl.body':
+    'OpenAI SDK wants the base ending in /v1. Anthropic SDK wants no /v1 — it appends /v1/messages itself. Mixing them up returns 404 from the SDK before the request even reaches us.',
+  'docs.sdk.gotcha.timeout.title': 'Default timeouts are too tight.',
+  'docs.sdk.gotcha.timeout.body':
+    'For long completions (Opus, deepseek-reasoner, big-context Kimi calls), set a 5-minute client timeout. SDKs default to 60s and will hang up mid-stream.',
+  'docs.sdk.gotcha.retry.title': 'Don\'t retry 402 / 429.',
+  'docs.sdk.gotcha.retry.body':
+    'A 402 means the wallet is empty; retrying just burns rate-limit headroom. The SDK\'s default retry policy retries 429 — that is fine, the relay backs off correctly.',
+  'docs.sdk.gotcha.cache.title': 'Prompt caching is automatic.',
+  'docs.sdk.gotcha.cache.body':
+    'Send the same system prompt + tools array on every turn — Anthropic caches the prefix server-side and you get ~10% pricing on cache_read tokens. The OpenAI SDK shape does not currently expose cache_control, so use the Anthropic SDK if you need fine control.',
+  'docs.sdk.gotcha.tools.title': 'Tool calls round-trip cleanly.',
+  'docs.sdk.gotcha.tools.body':
+    'Tools / function-calling are passed straight through; the relay does not re-encode tool_choice or strip arguments. If a tool call works against the upstream directly, it works through Nexa.',
+  'docs.sdk.migration.heading': 'Migrating an existing project',
+  'docs.sdk.migration.body':
+    'If you already use the official OpenAI library, switching to Nexa is one line:',
   'docs.read': 'Read',
 
   // pricing
@@ -1320,6 +1368,8 @@ export const zh: Dict = {
   'docs.index.api.desc': '/v1/messages 和 /v1/chat/completions 的 curl 示例。',
   'docs.index.reference.title': 'API 参考',
   'docs.index.reference.desc': '所有公开端点的 OpenAPI 3.1 规范、可直接试调的控制台和多语言代码片段。',
+  'docs.index.sdk.title': 'SDK 接入',
+  'docs.index.sdk.desc': 'OpenAI / Anthropic SDK 一键替换（Python + Node）、环境变量、踩坑清单。',
   'docs.index.cost.title': '成本指南',
   'docs.index.cost.desc': '什么任务该用什么模型 + 计费公式速查表。',
 
@@ -1364,6 +1414,51 @@ export const zh: Dict = {
   'docs.cost.heading.formulas': '计费公式',
   'docs.cost.formulas.intro': '每次中转调用 Nexa 都按这个公式计费。不支持缓存的厂商 cache 字段默认为 0。',
   'docs.cost.formulas.note': '记录精确到 micro-USD 写入 usage_log；余额扣减和 Redis 限额计数器同事务更新，>1 分钱的偏差不会发生（除非有日志可见的错误）。',
+
+  // docs/sdk
+  'docs.sdk.title': 'SDK 接入 —— OpenAI 与 Anthropic',
+  'docs.sdk.intro':
+    'Nexa 同时兼容 OpenAI 和 Anthropic 协议。把现有 SDK 的 baseURL 指过来，模型名换一下，构造器以外的代码一行不用改。',
+  'docs.sdk.auth.heading': '认证',
+  'docs.sdk.auth.body1': '所有请求都需要带',
+  'docs.sdk.auth.body2': '头，Key 在控制台签发。',
+  'docs.sdk.auth.note.base':
+    '—— 这一个 base URL 路由所有 OpenAI 兼容上游（DeepSeek、Qwen、Kimi、GLM、Doubao、Mistral、Gemini、OpenAI 自家）。',
+  'docs.sdk.auth.note.scope':
+    '每把 Key 都有 allowed_models 白名单 —— 把它收紧到客户端真正需要的最便宜那个模型。',
+  'docs.sdk.auth.note.streaming':
+    '所有端点都支持流式且字节透传，不缓冲、不重新序列化。',
+  'docs.sdk.openai.heading': 'OpenAI SDK',
+  'docs.sdk.openai.intro':
+    '适用于 DeepSeek、Qwen、Kimi、GLM、Doubao、Mistral、Gemini、OpenAI，乃至 Claude（模型名内部会自动转成 /v1/messages 调用）。',
+  'docs.sdk.anthropic.heading': 'Anthropic SDK',
+  'docs.sdk.anthropic.intro':
+    '需要 Anthropic 原生特性时用这个：多 block 内容、prompt cache、tool_use、message_start/stop SSE 事件。这里只能用 claude-* 模型 ID。',
+  'docs.sdk.envvars.heading': '环境变量速查',
+  'docs.sdk.envvars.intro':
+    '大多数客户端读取下列环境变量，配好之后业务代码完全不用改：',
+  'docs.sdk.envvars.col.tool': '工具',
+  'docs.sdk.envvars.col.envBase': 'Base URL 变量',
+  'docs.sdk.envvars.col.envKey': 'API Key 变量',
+  'docs.sdk.gotchas.heading': '常见踩坑',
+  'docs.sdk.gotcha.baseUrl.title': '/v1 后缀。',
+  'docs.sdk.gotcha.baseUrl.body':
+    'OpenAI SDK 要求 baseURL 以 /v1 结尾；Anthropic SDK 反过来不要带 /v1，它自己会拼 /v1/messages。混用会被 SDK 直接 404，请求都到不了我们这。',
+  'docs.sdk.gotcha.timeout.title': '默认超时太短。',
+  'docs.sdk.gotcha.timeout.body':
+    '长输出场景（Opus、deepseek-reasoner、Kimi 大上下文）建议把客户端超时调到 5 分钟。SDK 默认 60s，会在流中途断开。',
+  'docs.sdk.gotcha.retry.title': '402/429 不要重试。',
+  'docs.sdk.gotcha.retry.body':
+    '402 = 钱包余额耗尽，重试只会消耗速率额度。SDK 默认会重试 429，这是 OK 的，中转层会正确退避。',
+  'docs.sdk.gotcha.cache.title': 'Prompt 缓存自动生效。',
+  'docs.sdk.gotcha.cache.body':
+    '每轮带相同的 system prompt + tools 数组，Anthropic 会在服务端缓存前缀，cache_read 命中时只按 ~10% 计费。OpenAI SDK shape 目前不暴露 cache_control，需要精确控制时改用 Anthropic SDK。',
+  'docs.sdk.gotcha.tools.title': 'Tool call 透传。',
+  'docs.sdk.gotcha.tools.body':
+    '工具/函数调用直接透传，relay 不会重编 tool_choice、不会丢 arguments。在上游能跑的 tool call，到 Nexa 也能跑。',
+  'docs.sdk.migration.heading': '迁移现有项目',
+  'docs.sdk.migration.body':
+    '如果已经在用官方 OpenAI 库，切到 Nexa 只改一行：',
   'docs.read': '阅读',
 
   // pricing
