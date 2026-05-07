@@ -20,6 +20,9 @@ export interface MintInput {
   quotaMonthlyTokens?: number | null;
   expiresAt?: Date | null;
   allowedModels?: string[] | null;
+  dailyCapMud?: number | null;
+  weeklyCapMud?: number | null;
+  monthlyCapMud?: number | null;
 }
 
 export interface MintResult {
@@ -44,6 +47,9 @@ export async function mintApiKey(input: MintInput): Promise<MintResult> {
       quotaMonthlyTokens: input.quotaMonthlyTokens ?? null,
       expiresAt: input.expiresAt ?? null,
       allowedModels: input.allowedModels ?? null,
+      dailyCapMud: input.dailyCapMud ?? null,
+      weeklyCapMud: input.weeklyCapMud ?? null,
+      monthlyCapMud: input.monthlyCapMud ?? null,
     })
     .returning();
   if (!row) throw new Error('failed to insert api_key');

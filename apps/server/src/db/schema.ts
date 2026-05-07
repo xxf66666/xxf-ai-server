@@ -184,6 +184,13 @@ export const apiKeys = pgTable('api_keys', {
   // Per-key model allowlist. `null` = all models; non-null (even empty
   // array) = only those model IDs may be requested through this key.
   allowedModels: jsonb('allowed_models').$type<string[] | null>(),
+  // Spending caps in micro-USD. `null` = no cap on that window.
+  // Counters live in Redis (window key + TTL = window length); DB only
+  // stores the configured cap. Relay rejects with 402 BEFORE upstream
+  // call when ANY of the three windows would exceed.
+  dailyCapMud: bigint('daily_cap_mud', { mode: 'number' }),
+  weeklyCapMud: bigint('weekly_cap_mud', { mode: 'number' }),
+  monthlyCapMud: bigint('monthly_cap_mud', { mode: 'number' }),
   status: apiKeyStatusEnum('status').default('active').notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true }),
   lastUsedAt: timestamp('last_used_at', { withTimezone: true }),

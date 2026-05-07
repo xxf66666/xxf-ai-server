@@ -3,6 +3,7 @@ import { db } from '../../db/client.js';
 import { apiKeys, users } from '../../db/schema.js';
 import { logger } from '../../utils/logger.js';
 import { billingDebitFailures } from '../../utils/metrics.js';
+import { recordSpending } from './spending.js';
 
 /**
  * Debit a user for one request. Balance is allowed to go negative — the
@@ -25,6 +26,12 @@ export async function debitForRequest(apiKeyId: string, costMud: number): Promis
            updated_at  = now()
      WHERE id = (SELECT user_id FROM ${apiKeys} WHERE id = ${apiKeyId})
   `);
+  // Bump per-key spending windows. Running in parallel with the SQL
+  // would race on error semantics; we await it after debit so a Redis
+  // outage can't silently break the cap counter.
+  await recordSpending(apiKeyId, costMud).catch((err) => {
+    logger.warn({ err, apiKeyId, costMud }, 'recordSpending failed — caps may underreport');
+  });
 }
 
 /**

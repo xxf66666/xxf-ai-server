@@ -4,6 +4,7 @@ import { db } from '../../db/client.js';
 import { users, type ApiKey, type User } from '../../db/schema.js';
 import { findActiveByPlaintext } from './keys.js';
 import { isOverQuota } from './quota.js';
+import { checkCaps } from './spending.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -63,6 +64,20 @@ export async function requireApiKey(req: FastifyRequest, reply: FastifyReply): P
       error: {
         type: 'permission_error',
         message: 'account balance depleted; contact the operator to top up',
+      },
+    });
+  }
+  // Per-key spending caps. Cheaper to reject here than to let the relay
+  // burn an upstream call only to debit and discover we blew through.
+  const violation = await checkCaps(key);
+  if (violation) {
+    return void reply.code(402).send({
+      type: 'error',
+      error: {
+        type: 'permission_error',
+        message: `${violation.window}ly spending cap reached ($${(
+          violation.spentMud / 1_000_000
+        ).toFixed(2)} of $${(violation.capMud / 1_000_000).toFixed(2)}); resets at ${violation.resetAtUtc}`,
       },
     });
   }

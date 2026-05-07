@@ -18,32 +18,48 @@ const headlineSerif = Instrument_Serif({
   display: 'swap',
 });
 
-interface PricingRow {
-  modelId: string;
-  provider: string;
+interface CatalogModel {
+  id: string;
   tier: string | null;
   officialInputUsdPerM: number;
   officialOutputUsdPerM: number;
   ourInputUsdPerM: number;
   ourOutputUsdPerM: number;
 }
-interface PricingResponse {
+interface CatalogProvider {
+  slug: string;
+  displayName: string;
+  tagline: string;
+  state: 'pool' | 'live' | 'pending';
+  models: CatalogModel[];
+}
+interface CatalogResponse {
   markupRate: number;
   usdToCnyRate: number;
-  data: PricingRow[];
+  data: CatalogProvider[];
 }
 
 const fmtUsd = (n: number) => (n < 0.01 ? '$' + n.toFixed(4) : '$' + n.toFixed(2));
 
 export default function HomePage() {
   const t = useT();
-  const { data: pricing } = useQuery({
-    queryKey: ['public', 'pricing'],
-    queryFn: () => apiFetch<PricingResponse>('/v1/pricing'),
+  const { data: catalog } = useQuery({
+    queryKey: ['public', 'catalog'],
+    queryFn: () => apiFetch<CatalogResponse>('/v1/catalog'),
   });
 
-  const savingsPct = pricing ? Math.round((1 - pricing.markupRate) * 100) : 15;
-  const modelCount = pricing?.data.length ?? 8;
+  const savingsPct = catalog ? Math.round((1 - catalog.markupRate) * 100) : 15;
+  const providerCount = catalog?.data.length ?? 9;
+  const modelCount =
+    catalog?.data.reduce((acc, p) => acc + p.models.length, 0) ?? 28;
+  // Flatten featured models — flagship + codex from each live provider,
+  // capped to 8 cards on the home grid so it doesn't dominate.
+  const featured = (catalog?.data ?? [])
+    .filter((p) => (p.state === 'pool' || p.state === 'live') && p.models.length > 0)
+    .flatMap((p) =>
+      p.models.slice(0, 1).map((m) => ({ provider: p, model: m })),
+    )
+    .slice(0, 8);
 
   const features = [
     {
@@ -137,10 +153,28 @@ export default function HomePage() {
 
           {/* Stats strip */}
           <div className="mt-16 grid grid-cols-2 gap-4 border-t border-border pt-8 text-center md:grid-cols-4">
+            <Stat big={`${providerCount}`} small={t('home.stats.providers')} />
             <Stat big={`${modelCount}`} small={t('home.stats.models')} />
             <Stat big={`-${savingsPct}%`} small={t('home.stats.discount')} accent="text-emerald-700" />
             <Stat big="$5" small={t('home.stats.welcome')} />
-            <Stat big="<100ms" small={t('home.stats.latency')} />
+          </div>
+
+          {/* Provider logo strip */}
+          <div className="mt-10">
+            <p className="text-center text-[10px] uppercase tracking-widest text-muted-foreground">
+              {t('home.providersStrip')}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 opacity-70">
+              {(catalog?.data ?? []).map((p) => (
+                <div key={p.slug} className="flex items-center gap-1.5">
+                  <ProviderIcon provider={p.slug} size={18} />
+                  <span className="text-xs font-medium">{p.displayName}</span>
+                  {p.state === 'pending' && (
+                    <span className="text-[9px] text-muted-foreground">soon</span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -198,25 +232,25 @@ export default function HomePage() {
             <p className="mt-3 max-w-2xl text-sm text-muted-foreground">{t('home.models.sub')}</p>
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {(pricing?.data ?? []).map((m) => (
+            {featured.map(({ provider, model }) => (
               <div
-                key={m.modelId}
+                key={model.id}
                 className="group relative rounded-xl border border-border bg-background p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="flex items-center gap-2">
-                  <ProviderIcon provider={m.provider} size={22} />
-                  <code className="truncate font-mono text-xs font-medium">{m.modelId}</code>
+                  <ProviderIcon provider={provider.slug} size={22} />
+                  <code className="truncate font-mono text-xs font-medium">{model.id}</code>
                 </div>
                 <div className="mt-3 flex items-end justify-between">
                   <div className="text-xs">
                     <div className="text-muted-foreground">
                       {t('pricing.input')}
                       <span className="ml-1 text-muted-foreground line-through">
-                        {fmtUsd(m.officialInputUsdPerM)}
+                        {fmtUsd(model.officialInputUsdPerM)}
                       </span>
                     </div>
                     <div className="font-mono font-semibold text-foreground">
-                      {fmtUsd(m.ourInputUsdPerM)}
+                      {fmtUsd(model.ourInputUsdPerM)}
                       <span className="ml-1 text-[10px] font-normal text-muted-foreground">
                         {t('pricing.unit')}
                       </span>
@@ -226,11 +260,11 @@ export default function HomePage() {
                     <div className="text-muted-foreground">
                       {t('pricing.output')}
                       <span className="ml-1 text-muted-foreground line-through">
-                        {fmtUsd(m.officialOutputUsdPerM)}
+                        {fmtUsd(model.officialOutputUsdPerM)}
                       </span>
                     </div>
                     <div className="font-mono font-semibold text-foreground">
-                      {fmtUsd(m.ourOutputUsdPerM)}
+                      {fmtUsd(model.ourOutputUsdPerM)}
                       <span className="ml-1 text-[10px] font-normal text-muted-foreground">
                         {t('pricing.unit')}
                       </span>

@@ -214,6 +214,9 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
         quotaMonthlyTokens: k.quotaMonthlyTokens,
         usedMonthlyTokens: k.usedMonthlyTokens,
         allowedModels: k.allowedModels ?? null,
+        dailyCapUsd: k.dailyCapMud !== null ? k.dailyCapMud / 1_000_000 : null,
+        weeklyCapUsd: k.weeklyCapMud !== null ? k.weeklyCapMud / 1_000_000 : null,
+        monthlyCapUsd: k.monthlyCapMud !== null ? k.monthlyCapMud / 1_000_000 : null,
         expiresAt: k.expiresAt?.toISOString() ?? null,
         lastUsedAt: k.lastUsedAt?.toISOString() ?? null,
         createdAt: k.createdAt.toISOString(),
@@ -262,6 +265,69 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
     await revokeApiKey(id);
     await record(req, { action: 'key.revoke', entityType: 'api_key', entityId: id, detail: { via: 'console' } });
     return reply.code(204).send();
+  });
+
+  // Update per-key spending caps (USD; null = unlimited).
+  app.patch('/v1/console/keys/:id/caps', async (req, reply) => {
+    const uid = sessionUser(req);
+    if (!uid) return reply.code(401).send({ error: 'unauth' });
+    const id = (req.params as { id: string }).id;
+    const parsed = z
+      .object({
+        dailyCapUsd: z.number().nonnegative().nullable().optional(),
+        weeklyCapUsd: z.number().nonnegative().nullable().optional(),
+        monthlyCapUsd: z.number().nonnegative().nullable().optional(),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: parsed.error.message },
+      });
+    }
+    const [k] = await db.select().from(apiKeys).where(eq(apiKeys.id, id)).limit(1);
+    if (!k) return reply.code(404).send({ error: 'not_found' });
+    if (k.userId !== uid) return reply.code(403).send({ error: 'forbidden' });
+    const toMud = (usd: number | null | undefined): number | null | undefined =>
+      usd === undefined ? undefined : usd === null ? null : Math.round(usd * 1_000_000);
+    const patch: Record<string, unknown> = {};
+    if (parsed.data.dailyCapUsd !== undefined) patch.dailyCapMud = toMud(parsed.data.dailyCapUsd);
+    if (parsed.data.weeklyCapUsd !== undefined) patch.weeklyCapMud = toMud(parsed.data.weeklyCapUsd);
+    if (parsed.data.monthlyCapUsd !== undefined) patch.monthlyCapMud = toMud(parsed.data.monthlyCapUsd);
+    if (Object.keys(patch).length === 0) {
+      return reply.code(400).send({
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'no caps provided' },
+      });
+    }
+    await db.update(apiKeys).set(patch).where(eq(apiKeys.id, id));
+    await record(req, {
+      action: 'key.caps_update',
+      entityType: 'api_key',
+      entityId: id,
+      detail: parsed.data as Record<string, unknown>,
+    });
+    return { ok: true };
+  });
+
+  // Live spending state across the three windows for a single key.
+  app.get('/v1/console/keys/:id/spending', async (req, reply) => {
+    const uid = sessionUser(req);
+    if (!uid) return reply.code(401).send({ error: 'unauth' });
+    const id = (req.params as { id: string }).id;
+    const [k] = await db.select().from(apiKeys).where(eq(apiKeys.id, id)).limit(1);
+    if (!k) return reply.code(404).send({ error: 'not_found' });
+    if (k.userId !== uid) return reply.code(403).send({ error: 'forbidden' });
+    const { readSpending } = await import('../../core/users/spending.js');
+    const state = await readSpending(id);
+    return {
+      dayUsd: state.dayMud / 1_000_000,
+      weekUsd: state.weekMud / 1_000_000,
+      monthUsd: state.monthMud / 1_000_000,
+      dailyCapUsd: k.dailyCapMud !== null ? k.dailyCapMud / 1_000_000 : null,
+      weeklyCapUsd: k.weeklyCapMud !== null ? k.weeklyCapMud / 1_000_000 : null,
+      monthlyCapUsd: k.monthlyCapMud !== null ? k.monthlyCapMud / 1_000_000 : null,
+    };
   });
 
   app.get('/v1/console/usage', async (req, reply) => {
