@@ -30,6 +30,9 @@ import {
   translateStreamEvent,
 } from '../../core/relay/openai-translate.js';
 import { relayChatgptResponses } from '../../core/relay/chatgpt.js';
+import { relayOpenAICompat } from '../../core/relay/openai-compat.js';
+import { providerForModel } from '../../core/providers/registry.js';
+import { getCredential } from '../../core/providers/store.js';
 
 function authFingerprint(auth: string | undefined): string {
   if (!auth) return 'anon';
@@ -73,6 +76,38 @@ export async function registerOpenAI(app: FastifyInstance): Promise<void> {
             message: `this api key is not allowed to call model ${requestedModel}`,
           },
         });
+      }
+
+      // Dispatcher: model prefix → upstream provider. If the prefix
+      // belongs to a NON-claude OpenAI-compatible provider (DeepSeek,
+      // Qwen, Kimi, …) and we have a credential configured, route to
+      // that provider's native API and skip the Claude translation
+      // layer entirely. claude-* and unconfigured prefixes fall through
+      // to the existing logic.
+      const matched = providerForModel(requestedModel);
+      if (matched && matched.openaiCompat) {
+        const cred = await getCredential(matched.slug);
+        if (cred && cred.enabled) {
+          return relayOpenAICompat(req, reply, {
+            provider: matched,
+            credential: cred,
+            apiKey,
+            model: requestedModel,
+            body: body as unknown as Record<string, unknown>,
+          });
+        }
+        // OpenAI specifically: unconfigured key → fall through to the
+        // ChatGPT-Plus relay or Claude translation. Other vendors with
+        // no key → 503 because there's no fallback that makes sense
+        // (you can't translate a deepseek-v3 call onto Claude).
+        if (matched.slug !== 'openai') {
+          return reply.code(503).send({
+            error: {
+              type: 'api_error',
+              message: `provider ${matched.slug} is not configured on this gateway`,
+            },
+          });
+        }
       }
 
       // Dispatcher: when CHATGPT_RELAY_ENABLED is on and a chatgpt

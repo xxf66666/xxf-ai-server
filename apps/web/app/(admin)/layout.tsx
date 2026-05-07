@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { BarChart3, Boxes, CreditCard, FileSearch, KeyRound, LayoutDashboard, LogOut, Megaphone, Network, Settings, Ticket, Users } from 'lucide-react';
+import { BarChart3, Boxes, CreditCard, FileSearch, KeyRound, LayoutDashboard, LogOut, Megaphone, Network, Plug, Settings, Ticket, Users } from 'lucide-react';
 import { apiFetch } from '../../lib/api';
 import { clearBootstrapToken } from '../../lib/auth';
 import { useT } from '../../lib/i18n/context';
@@ -21,6 +21,7 @@ interface Me {
 const nav: Array<{ href: string; label: DictKey; icon: typeof LayoutDashboard }> = [
   { href: '/dashboard', label: 'nav.dashboard', icon: LayoutDashboard },
   { href: '/accounts', label: 'nav.accounts', icon: Boxes },
+  { href: '/providers', label: 'nav.providers', icon: Plug },
   { href: '/users', label: 'nav.users', icon: Users },
   { href: '/keys', label: 'nav.keys', icon: KeyRound },
   { href: '/invites', label: 'nav.invites', icon: Ticket },

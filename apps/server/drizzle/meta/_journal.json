@@ -92,6 +92,20 @@
       "when": 1776573000000,
       "tag": "0012_real_codex_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1776600000000,
+      "tag": "0013_provider_configs",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1776600100000,
+      "tag": "0014_seed_third_party_models",
+      "breakpoints": true
     }
   ]
 }

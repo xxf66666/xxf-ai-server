@@ -46,12 +46,18 @@ export function ProviderIcon({
 }) {
   const brand = BRAND[provider];
   if (!brand) {
+    // Generic letter-mark fallback for vendors without an inlined SVG.
+    // Keeps the layout stable and conveys identity well enough at the
+    // sizes we render at.
+    const letter = (provider[0] ?? '?').toUpperCase();
     return (
-      <div
-        className={`rounded-full bg-muted ${className}`}
-        style={{ width: size, height: size }}
+      <span
+        className={`inline-flex items-center justify-center rounded-md bg-muted text-muted-foreground ${className ?? ''}`}
+        style={{ width: size, height: size, fontSize: size * 0.5, fontWeight: 600 }}
         aria-label={provider}
-      />
+      >
+        {letter}
+      </span>
     );
   }
   return (

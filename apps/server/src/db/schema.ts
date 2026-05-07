@@ -34,6 +34,29 @@ export const announcementSeverityEnum = pgEnum('announcement_severity', [
   'critical',
 ]);
 
+// Single-row-per-vendor credential store. Distinct from `accounts` (which
+// holds per-user OAuth pool entries for Claude Code / Codex CLI). This
+// table backs the operator-supplied single API key for vendors like
+// DeepSeek / Qwen / Kimi etc. — one shared key per vendor, billed by us
+// on the gateway.
+export const providerConfigs = pgTable('provider_configs', {
+  // Stable slug, primary key. Matches the registry constant below
+  // (deepseek, qwen, kimi, zhipu, doubao, mistral, gemini, openai).
+  slug: varchar('slug', { length: 32 }).primaryKey(),
+  // AES-GCM-sealed envelope JSON, same primitive as accounts.oauth_*.
+  // Null when the operator hasn't configured a key yet.
+  apiKeySealed: text('api_key_sealed'),
+  // Optional override of the registry's default base URL. Useful when
+  // an operator wants to route through a private proxy.
+  baseUrlOverride: text('base_url_override'),
+  enabled: boolean('enabled').default(true).notNull(),
+  lastTestedAt: timestamp('last_tested_at', { withTimezone: true }),
+  lastTestOk: boolean('last_tested_ok'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+export type ProviderConfig = typeof providerConfigs.$inferSelect;
+
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   email: varchar('email', { length: 320 }).notNull().unique(),

@@ -471,6 +471,14 @@ export async function registerConsole(app: FastifyInstance): Promise<void> {
     };
   });
 
+  // Richer view used by the new /console/models page: every model from
+  // model_pricing, grouped by registry provider, plus configured-state
+  // so the UI can grey out vendors waiting for an API key.
+  app.get('/v1/console/catalog', async () => {
+    const { providersCatalog } = await import('../../core/providers/catalog.js');
+    return providersCatalog();
+  });
+
   app.post('/v1/console/redeem', async (req, reply) => {
     const uid = sessionUser(req);
     if (!uid) return reply.code(401).send({ error: 'unauth' });
