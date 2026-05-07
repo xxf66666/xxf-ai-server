@@ -35,6 +35,7 @@ export function MarketingFooter() {
               </Link>
             </li>
             <li><Link href={'/vs/openrouter' as never} className="text-muted-foreground hover:text-foreground">{t('footer.compare')}</Link></li>
+            <li><Link href={'/changelog' as never} className="text-muted-foreground hover:text-foreground">{t('footer.changelog')}</Link></li>
           </ul>
         </div>
         <div>

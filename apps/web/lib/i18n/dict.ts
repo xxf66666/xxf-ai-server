@@ -513,6 +513,7 @@ export const en = {
   'footer.account': 'Account',
   'footer.status': 'Status',
   'footer.compare': 'vs OpenRouter',
+  'footer.changelog': 'Changelog',
   'footer.terms': 'Terms of Service',
   'footer.privacy': 'Privacy Policy',
   'footer.disclaimer':
@@ -670,6 +671,11 @@ export const en = {
   'status.state.pending': 'pending',
   'status.refreshing': 'auto-refreshing every 30s',
   'status.refreshNow': 'Refresh now',
+
+  // changelog
+  'changelog.title': 'Changelog',
+  'changelog.subtitle':
+    'User-visible changes only. Internal refactors and dependency bumps live in CHANGELOG.md.',
 
   // vs / openrouter compare
   'vs.title.lead': 'A relay built for developers',
@@ -1547,6 +1553,7 @@ export const zh: Dict = {
   'footer.account': '账号',
   'footer.status': '状态',
   'footer.compare': '对比 OpenRouter',
+  'footer.changelog': '更新日志',
   'footer.terms': '用户协议',
   'footer.privacy': '隐私协议',
   'footer.disclaimer': '独立运营的中转网关 —— 非 Anthropic / OpenAI 官方服务。',
@@ -1683,6 +1690,10 @@ export const zh: Dict = {
   'status.state.pending': '待接入',
   'status.refreshing': '每 30 秒自动刷新',
   'status.refreshNow': '立即刷新',
+
+  // changelog
+  'changelog.title': '更新日志',
+  'changelog.subtitle': '只列对用户可见的变化。内部重构与依赖更新见仓库 CHANGELOG.md。',
 
   // vs / openrouter compare
   'vs.title.lead': '为开发者打造的中转',
