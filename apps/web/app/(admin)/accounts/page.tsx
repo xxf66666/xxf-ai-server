@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '../../../lib/api';
 import { useT } from '../../../lib/i18n/context';
+import { useToast } from '../../../components/Toast';
 import type { DictKey } from '../../../lib/i18n/dict';
 
 type AccountStatus =
@@ -164,6 +165,7 @@ function WindowBar({
 export default function AccountsPage() {
   const qc = useQueryClient();
   const t = useT();
+  const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const nowMs = useTick(1000);
 
@@ -189,9 +191,15 @@ export default function AccountsPage() {
       ),
     onSuccess: (res, id) => {
       qc.invalidateQueries({ queryKey: ['accounts'] });
-      alert(
-        `probe ${id.slice(0, 8)}…\nHTTP ${res.status} → ${res.classification}\n${res.latencyMs}ms`,
-      );
+      toast.push({
+        tone: res.ok ? 'success' : 'error',
+        title: `probe ${id.slice(0, 8)}… · HTTP ${res.status} · ${res.classification}`,
+        detail: `${res.latencyMs}ms round-trip`,
+      });
+    },
+    onError: (err: unknown, id) => {
+      const msg = err instanceof Error ? err.message : 'probe failed';
+      toast.push({ tone: 'error', title: `probe ${id.slice(0, 8)}…`, detail: msg });
     },
   });
   const patch = useMutation({

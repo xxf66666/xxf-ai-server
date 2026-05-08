@@ -219,21 +219,21 @@ export default function UsersPage() {
                   <td className="px-4 py-2 text-right font-mono text-xs text-muted-foreground">
                     {usd.format(mudToUsd(u.spentMud))}
                   </td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground">
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-muted-foreground">
                     {u.lastLoginAt ? (
-                      <div>
-                        <div>{new Date(u.lastLoginAt).toLocaleString()}</div>
+                      <span title={u.lastLoginIp ?? ''}>
+                        {new Date(u.lastLoginAt).toLocaleString()}
                         {u.lastLoginIp && (
-                          <div className="font-mono text-[10px] text-muted-foreground/70">
+                          <span className="ml-1.5 font-mono text-[10px] text-muted-foreground/60">
                             {u.lastLoginIp}
-                          </div>
+                          </span>
                         )}
-                      </div>
+                      </span>
                     ) : (
                       t('common.dash')
                     )}
                   </td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground">
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-muted-foreground">
                     {new Date(u.createdAt).toLocaleString()}
                   </td>
                   <td className="space-x-3 whitespace-nowrap px-4 py-2 text-right">

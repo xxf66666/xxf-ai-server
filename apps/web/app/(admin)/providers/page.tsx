@@ -29,6 +29,11 @@ export default function ProvidersAdminPage() {
     refetchInterval: 30_000,
   });
   const [editing, setEditing] = useState<Provider | null>(null);
+  // Per-slug probe result panel — replaces the old alert() so the
+  // operator can read the upstream response without losing context.
+  const [probeResults, setProbeResults] = useState<
+    Record<string, { ok: boolean; status: number; latencyMs: number; body: string; at: number }>
+  >({});
 
   const setKey = useMutation({
     mutationFn: ({ slug, apiKey, baseUrlOverride }: { slug: string; apiKey: string; baseUrlOverride: string | null }) =>
@@ -62,7 +67,7 @@ export default function ProvidersAdminPage() {
       ),
     onSuccess: (r, slug) => {
       qc.invalidateQueries({ queryKey: ['providers'] });
-      alert(`${slug}\n\nHTTP ${r.status} · ${r.ok ? 'OK' : 'FAILED'} · ${r.latencyMs}ms\n\n${r.body.slice(0, 200)}`);
+      setProbeResults((prev) => ({ ...prev, [slug]: { ...r, at: Date.now() } }));
     },
   });
 
@@ -179,6 +184,45 @@ export default function ProvidersAdminPage() {
                 {p.lastTestOk ? '✓' : '✗'}
               </div>
             )}
+
+            {(() => {
+              const r = probeResults[p.slug];
+              if (!r) return null;
+              return (
+                <div
+                  className={`mt-3 rounded-md border px-3 py-2 text-xs ${
+                    r.ok
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                      : 'border-rose-200 bg-rose-50 text-rose-900'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono">
+                      HTTP {r.status} · {r.ok ? 'OK' : 'FAILED'} · {r.latencyMs}ms
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setProbeResults((prev) => {
+                          const next = { ...prev };
+                          delete next[p.slug];
+                          return next;
+                        })
+                      }
+                      className="rounded p-0.5 opacity-60 hover:bg-background/50 hover:opacity-100"
+                      aria-label={t('common.dismiss')}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                  {r.body && (
+                    <pre className="mt-1.5 max-h-32 overflow-auto whitespace-pre-wrap break-all font-mono text-[10px] leading-snug opacity-80">
+                      {r.body.slice(0, 600)}
+                    </pre>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         ))}
       </div>

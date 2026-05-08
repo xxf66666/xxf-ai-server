@@ -184,20 +184,20 @@ export default function HomePage() {
           straight onto the home page so visitors see the "$ saved"
           story without bouncing to /pricing. */}
       <section className="border-t border-border bg-gradient-to-r from-emerald-50 via-background to-violet-50/40">
-        <div className="container mx-auto max-w-6xl px-4 py-10">
-          <div className="flex flex-wrap items-center gap-6">
+        <div className="container mx-auto max-w-6xl px-4 py-8 md:py-10">
+          <div className="flex flex-col gap-5 md:flex-row md:flex-wrap md:items-center md:gap-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/30 to-teal-500/20 text-emerald-700">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/30 to-teal-500/20 text-emerald-700">
                 <Zap className="h-6 w-6" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="text-sm font-semibold">{t('home.deepseek.title')}</div>
                 <div className="text-xs text-muted-foreground">
                   {t('home.deepseek.desc')}
                 </div>
               </div>
             </div>
-            <div className="ml-auto flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5 md:ml-auto md:gap-3">
               <code className="rounded-md border border-border bg-background px-2.5 py-1 font-mono text-[11px]">
                 model: deepseek-chat
               </code>
