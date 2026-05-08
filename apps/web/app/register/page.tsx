@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { CheckCircle2, MailCheck } from 'lucide-react';
+import { CheckCircle2, Loader2, MailCheck } from 'lucide-react';
 import { apiFetch } from '../../lib/api';
 import { useT } from '../../lib/i18n/context';
 import { AuthShell } from '../../components/AuthShell';
@@ -166,7 +166,7 @@ export default function RegisterPage() {
             type="email"
             autoComplete="email"
             required
-            className="w-full rounded-md border border-border bg-background px-3 py-2 outline-none ring-primary/30 focus:ring-2"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 outline-none ring-primary/30 transition focus:ring-2"
           />
         </label>
 
@@ -179,7 +179,7 @@ export default function RegisterPage() {
             autoComplete="new-password"
             minLength={8}
             required
-            className="w-full rounded-md border border-border bg-background px-3 py-2 outline-none ring-primary/30 focus:ring-2"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 outline-none ring-primary/30 transition focus:ring-2"
           />
           <PasswordStrength password={form.password} />
         </label>
@@ -193,12 +193,12 @@ export default function RegisterPage() {
             autoComplete="new-password"
             required
             aria-invalid={form.passwordConfirm.length > 0 && !pwMatch}
-            className={`w-full rounded-md border bg-background px-3 py-2 outline-none ring-primary/30 focus:ring-2 ${
-              form.passwordConfirm.length > 0 && !pwMatch ? 'border-red-400' : 'border-border'
+            className={`w-full rounded-md border bg-background px-3 py-2 outline-none ring-primary/30 transition focus:ring-2 ${
+              form.passwordConfirm.length > 0 && !pwMatch ? 'border-red-500/60' : 'border-border'
             }`}
           />
           {form.passwordConfirm.length > 0 && !pwMatch && (
-            <p className="text-xs text-red-600">{t('register.err.mismatch')}</p>
+            <p className="text-xs text-red-500">{t('register.err.mismatch')}</p>
           )}
         </label>
 
@@ -266,8 +266,9 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={submitting || !canSubmit}
-          className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
+          {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
           {submitting ? t('register.submitting') : t('register.submit')}
         </button>
 

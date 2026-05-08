@@ -195,7 +195,7 @@ export default function AnnouncementsAdminPage() {
                   </div>
                   <div className="text-sm font-medium">{a.title}</div>
                   <div className="whitespace-pre-wrap text-xs text-muted-foreground">
-                    {a.body}
+                    {a.body.trimEnd()}
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-col gap-1 text-xs">

@@ -58,34 +58,34 @@ export default function DashboardPage() {
     refetchInterval: 20_000,
   });
 
-  const cards = [
+  const cards: Array<{ label: string; value: string | null; icon: typeof Boxes; tint: string }> = [
     {
       label: t('dashboard.card.activeAccounts'),
-      value: data ? String(data.activeAccounts) : t('common.dash'),
+      value: data ? String(data.activeAccounts) : null,
       icon: Boxes,
       tint: 'bg-indigo-500/10 text-indigo-600',
     },
     {
       label: t('dashboard.card.tokens24h'),
-      value: data ? fmt.format(data.tokensLast24h) : t('common.dash'),
+      value: data ? fmt.format(data.tokensLast24h) : null,
       icon: Zap,
       tint: 'bg-amber-500/10 text-amber-600',
     },
     {
       label: t('dashboard.card.requests24h'),
-      value: data ? fmt.format(data.requestsLast24h) : t('common.dash'),
+      value: data ? fmt.format(data.requestsLast24h) : null,
       icon: Send,
       tint: 'bg-emerald-500/10 text-emerald-600',
     },
     {
       label: t('dashboard.card.cost24h'),
-      value: data ? usd.format(mudToUsd(data.costLast24hMud)) : t('common.dash'),
+      value: data ? usd.format(mudToUsd(data.costLast24hMud)) : null,
       icon: CircleDollarSign,
       tint: 'bg-violet-500/10 text-violet-600',
     },
     {
       label: t('dashboard.card.poolUtilization'),
-      value: data ? `${Math.round(data.poolUtilization * 100)}%` : t('common.dash'),
+      value: data ? `${Math.round(data.poolUtilization * 100)}%` : null,
       icon: Activity,
       tint: 'bg-rose-500/10 text-rose-600',
     },
@@ -128,9 +128,13 @@ export default function DashboardPage() {
               <div className={`flex h-10 w-10 items-center justify-center rounded-full ${c.tint}`}>
                 <Icon className="h-5 w-5" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="text-xs text-muted-foreground">{c.label}</div>
-                <div className="text-xl font-semibold">{c.value}</div>
+                {c.value !== null ? (
+                  <div className="truncate text-xl font-semibold tabular-nums">{c.value}</div>
+                ) : (
+                  <div className="mt-1 h-6 w-16 animate-pulse rounded bg-muted" aria-hidden />
+                )}
               </div>
             </div>
           );

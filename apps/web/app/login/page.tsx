@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { AlertCircle, KeyRound, MailWarning } from 'lucide-react';
+import { AlertCircle, KeyRound, Loader2, MailWarning } from 'lucide-react';
 import { ApiError, apiFetch } from '../../lib/api';
 import { setBootstrapToken } from '../../lib/auth';
 import { useT } from '../../lib/i18n/context';
@@ -145,7 +145,7 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full rounded-md border border-border bg-background px-3 py-2 outline-none ring-primary/30 focus:ring-2"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 outline-none ring-primary/30 transition focus:ring-2"
               />
             </label>
             <label className="block space-y-1 text-sm">
@@ -156,7 +156,7 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="w-full rounded-md border border-border bg-background px-3 py-2 outline-none ring-primary/30 focus:ring-2"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 outline-none ring-primary/30 transition focus:ring-2"
               />
             </label>
           </>
@@ -256,8 +256,9 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
         >
+          {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
           {submitting ? t('login.verifying') : t('login.submit')}
         </button>
 
