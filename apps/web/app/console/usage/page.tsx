@@ -99,56 +99,79 @@ export default function ConsoleUsagePage() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-background">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-lg border border-border bg-background">
+        <table className="w-full min-w-[820px] text-sm">
           <thead className="bg-muted/40 text-left text-muted-foreground">
             <tr>
-              <th className="px-4 py-2 font-medium">{t('console.usage.col.time')}</th>
+              <th className="whitespace-nowrap px-4 py-2 font-medium">
+                {t('console.usage.col.time')}
+              </th>
               <th className="px-4 py-2 font-medium">{t('console.usage.col.key')}</th>
               <th className="px-4 py-2 font-medium">{t('console.usage.col.model')}</th>
-              <th className="px-4 py-2 font-medium text-right">{t('console.usage.col.input')}</th>
-              <th className="px-4 py-2 font-medium text-right">{t('console.usage.col.output')}</th>
-              <th className="px-4 py-2 font-medium text-right">{t('console.usage.col.cost')}</th>
-              <th className="px-4 py-2 font-medium text-right">{t('console.usage.col.latency')}</th>
+              <th className="whitespace-nowrap px-4 py-2 text-right font-medium">
+                {t('console.usage.col.input')}
+              </th>
+              <th className="whitespace-nowrap px-4 py-2 text-right font-medium">
+                {t('console.usage.col.output')}
+              </th>
+              <th className="whitespace-nowrap px-4 py-2 text-right font-medium">
+                {t('console.usage.col.cost')}
+              </th>
+              <th className="whitespace-nowrap px-4 py-2 text-right font-medium">
+                {t('console.usage.col.latency')}
+              </th>
               <th className="px-4 py-2 font-medium">{t('console.usage.col.status')}</th>
             </tr>
           </thead>
           <tbody>
-            {isLoading && (
-              <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">
-                  {t('common.loading')}
-                </td>
-              </tr>
-            )}
+            {isLoading &&
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={`sk-${i}`} className="border-t border-border">
+                  {Array.from({ length: 8 }).map((__, j) => (
+                    <td key={j} className="px-4 py-3">
+                      <div
+                        className="h-3 w-full animate-pulse rounded bg-muted"
+                        style={{ maxWidth: j === 2 || j === 1 ? 100 : 60 }}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
             {!isLoading && (data?.data.length ?? 0) === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">
-                  {t('console.usage.empty')}
+                <td colSpan={8} className="px-4 py-12 text-center">
+                  <div className="text-sm text-muted-foreground">{t('console.usage.empty')}</div>
                 </td>
               </tr>
             )}
-            {data?.data.map((r) => (
-              <tr key={r.id} className="border-t border-border">
-                <td className="px-4 py-2 text-xs text-muted-foreground">
-                  {new Date(r.createdAt).toLocaleString()}
-                </td>
-                <td className="px-4 py-2">{r.keyName}</td>
-                <td className="px-4 py-2 font-mono text-xs">{r.model}</td>
-                <td className="px-4 py-2 text-right">{fmt.format(r.inputTokens)}</td>
-                <td className="px-4 py-2 text-right">{fmt.format(r.outputTokens)}</td>
-                <td className="px-4 py-2 text-right font-mono text-xs">
-                  {r.costMud > 0 ? usd.format(mudToUsd(r.costMud)) : t('common.dash')}
-                </td>
-                <td className="px-4 py-2 text-right">{r.latencyMs}ms</td>
-                <td className="px-4 py-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs ${statusClass(r.status)}`}>
-                    {r.status}
-                    {r.errorCode ? ` · ${r.errorCode}` : ''}
-                  </span>
-                </td>
-              </tr>
-            ))}
+            {!isLoading &&
+              data?.data.map((r) => (
+                <tr key={r.id} className="border-t border-border hover:bg-muted/30">
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-muted-foreground">
+                    {new Date(r.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-2">{r.keyName}</td>
+                  <td className="px-4 py-2 font-mono text-xs">{r.model}</td>
+                  <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums">
+                    {fmt.format(r.inputTokens)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums">
+                    {fmt.format(r.outputTokens)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-right font-mono text-xs">
+                    {r.costMud > 0 ? usd.format(mudToUsd(r.costMud)) : t('common.dash')}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums">
+                    {r.latencyMs}ms
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2">
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${statusClass(r.status)}`}>
+                      {r.status}
+                      {r.errorCode ? ` · ${r.errorCode}` : ''}
+                    </span>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>

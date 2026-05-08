@@ -2,8 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { CircleDollarSign, Loader2, Wallet } from 'lucide-react';
 import { apiFetch } from '../../../lib/api';
 import { useT } from '../../../lib/i18n/context';
+import { useToast } from '../../../components/Toast';
 
 interface Overview {
   balanceMud: number;
@@ -22,6 +24,7 @@ const mudToUsd = (mud: number) => mud / 1_000_000;
 export default function WalletPage() {
   const qc = useQueryClient();
   const t = useT();
+  const toast = useToast();
 
   const { data: overview } = useQuery({
     queryKey: ['console', 'overview'],
@@ -45,6 +48,10 @@ export default function WalletPage() {
     onSuccess: (res) => {
       setSuccess(res.valueMud);
       setCode('');
+      toast.push({
+        tone: 'success',
+        title: t('wallet.redeem.success', { amount: usd.format(mudToUsd(res.valueMud)) }),
+      });
       qc.invalidateQueries({ queryKey: ['console', 'overview'] });
       qc.invalidateQueries({ queryKey: ['console', 'redeem-history'] });
     },
@@ -61,16 +68,38 @@ export default function WalletPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-border bg-background p-6">
-          <div className="text-xs text-muted-foreground">{t('wallet.balance')}</div>
-          <div className={`mt-1 text-3xl font-semibold ${balClass}`}>
-            {overview ? usd.format(balance) : t('common.dash')}
+        <div className="flex items-start gap-4 rounded-xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-teal-50 p-6 dark:border-emerald-900/40 dark:from-emerald-950/30 dark:to-teal-950/20">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+            <Wallet className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">
+              {t('wallet.balance')}
+            </div>
+            {overview ? (
+              <div className={`mt-1 truncate text-3xl font-semibold tabular-nums ${balClass}`}>
+                {usd.format(balance)}
+              </div>
+            ) : (
+              <div className="mt-2 h-7 w-32 animate-pulse rounded bg-emerald-200/40" aria-hidden />
+            )}
           </div>
         </div>
-        <div className="rounded-lg border border-border bg-background p-6">
-          <div className="text-xs text-muted-foreground">{t('wallet.spent')}</div>
-          <div className="mt-1 text-3xl font-semibold text-muted-foreground">
-            {overview ? usd.format(mudToUsd(overview.spentMud)) : t('common.dash')}
+        <div className="flex items-start gap-4 rounded-xl border border-border bg-muted/20 p-6">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/15 text-violet-700 dark:text-violet-300">
+            <CircleDollarSign className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">
+              {t('wallet.spent')}
+            </div>
+            {overview ? (
+              <div className="mt-1 truncate text-3xl font-semibold tabular-nums text-foreground/80">
+                {usd.format(mudToUsd(overview.spentMud))}
+              </div>
+            ) : (
+              <div className="mt-2 h-7 w-32 animate-pulse rounded bg-muted" aria-hidden />
+            )}
           </div>
         </div>
       </div>
@@ -95,8 +124,9 @@ export default function WalletPage() {
           <button
             type="submit"
             disabled={redeem.isPending}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
           >
+            {redeem.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             {redeem.isPending ? t('wallet.redeem.submitting') : t('wallet.redeem.submit')}
           </button>
         </div>
@@ -114,8 +144,8 @@ export default function WalletPage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-medium">{t('wallet.history.title')}</h2>
-        <div className="rounded-lg border border-border bg-background">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-border bg-background">
+          <table className="w-full min-w-[480px] text-sm">
             <thead className="bg-muted/40 text-left text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 font-medium">{t('wallet.history.col.code')}</th>
