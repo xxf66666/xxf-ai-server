@@ -55,15 +55,15 @@ export default function StatsPage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-medium">{t('stats.byUser')}</h2>
-        <div className="rounded-lg border border-border">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[560px] text-sm">
             <thead className="bg-muted/40 text-left text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 font-medium">{t('stats.col.user')}</th>
                 <th className="px-4 py-2 font-medium">{t('stats.col.role')}</th>
-                <th className="px-4 py-2 text-right font-medium">{t('stats.col.tokens')}</th>
-                <th className="px-4 py-2 text-right font-medium">{t('stats.col.requests')}</th>
-                <th className="px-4 py-2 text-right font-medium">{t('stats.col.cost')}</th>
+                <th className="whitespace-nowrap px-4 py-2 text-right font-medium">{t('stats.col.tokens')}</th>
+                <th className="whitespace-nowrap px-4 py-2 text-right font-medium">{t('stats.col.requests')}</th>
+                <th className="whitespace-nowrap px-4 py-2 text-right font-medium">{t('stats.col.cost')}</th>
               </tr>
             </thead>
             <tbody>
@@ -78,9 +78,9 @@ export default function StatsPage() {
                 <tr key={row.userId} className="border-t border-border">
                   <td className="px-4 py-2 font-mono text-xs">{row.email}</td>
                   <td className="px-4 py-2">{row.role}</td>
-                  <td className="px-4 py-2 text-right">{fmt.format(row.tokens)}</td>
-                  <td className="px-4 py-2 text-right">{fmt.format(row.requests)}</td>
-                  <td className="px-4 py-2 text-right font-mono text-xs">{usd.format(mudToUsd(row.costMud))}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{fmt.format(row.tokens)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{fmt.format(row.requests)}</td>
+                  <td className="px-4 py-2 text-right font-mono text-xs tabular-nums">{usd.format(mudToUsd(row.costMud))}</td>
                 </tr>
               ))}
             </tbody>
@@ -90,16 +90,16 @@ export default function StatsPage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-medium">{t('stats.byAccount')}</h2>
-        <div className="rounded-lg border border-border">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[560px] text-sm">
             <thead className="bg-muted/40 text-left text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 font-medium">{t('stats.col.account')}</th>
                 <th className="px-4 py-2 font-medium">{t('stats.col.plan')}</th>
                 <th className="px-4 py-2 font-medium">{t('stats.col.status')}</th>
-                <th className="px-4 py-2 text-right font-medium">{t('stats.col.tokens')}</th>
-                <th className="px-4 py-2 text-right font-medium">{t('stats.col.requests')}</th>
-                <th className="px-4 py-2 text-right font-medium">{t('stats.col.cost')}</th>
+                <th className="whitespace-nowrap px-4 py-2 text-right font-medium">{t('stats.col.tokens')}</th>
+                <th className="whitespace-nowrap px-4 py-2 text-right font-medium">{t('stats.col.requests')}</th>
+                <th className="whitespace-nowrap px-4 py-2 text-right font-medium">{t('stats.col.cost')}</th>
               </tr>
             </thead>
             <tbody>
@@ -119,9 +119,9 @@ export default function StatsPage() {
                     </td>
                     <td className="px-4 py-2">{acct?.plan ?? t('common.dash')}</td>
                     <td className="px-4 py-2">{acct?.status ?? t('common.dash')}</td>
-                    <td className="px-4 py-2 text-right">{fmt.format(row.tokens)}</td>
-                    <td className="px-4 py-2 text-right">{fmt.format(row.requests)}</td>
-                    <td className="px-4 py-2 text-right font-mono text-xs">{usd.format(mudToUsd(row.costMud))}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{fmt.format(row.tokens)}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{fmt.format(row.requests)}</td>
+                    <td className="px-4 py-2 text-right font-mono text-xs tabular-nums">{usd.format(mudToUsd(row.costMud))}</td>
                   </tr>
                 );
               })}
@@ -132,14 +132,14 @@ export default function StatsPage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-medium">{t('stats.byKey')}</h2>
-        <div className="rounded-lg border border-border">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[560px] text-sm">
             <thead className="bg-muted/40 text-left text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 font-medium">{t('stats.col.keyId')}</th>
-                <th className="px-4 py-2 text-right font-medium">{t('stats.col.tokens')}</th>
-                <th className="px-4 py-2 text-right font-medium">{t('stats.col.requests')}</th>
-                <th className="px-4 py-2 text-right font-medium">{t('stats.col.cost')}</th>
+                <th className="whitespace-nowrap px-4 py-2 text-right font-medium">{t('stats.col.tokens')}</th>
+                <th className="whitespace-nowrap px-4 py-2 text-right font-medium">{t('stats.col.requests')}</th>
+                <th className="whitespace-nowrap px-4 py-2 text-right font-medium">{t('stats.col.cost')}</th>
               </tr>
             </thead>
             <tbody>
@@ -155,9 +155,9 @@ export default function StatsPage() {
                   <td className="px-4 py-2 font-mono text-xs">
                     {row.apiKeyId ? row.apiKeyId.slice(0, 8) + '…' : t('common.none_deleted')}
                   </td>
-                  <td className="px-4 py-2 text-right">{fmt.format(row.tokens)}</td>
-                  <td className="px-4 py-2 text-right">{fmt.format(row.requests)}</td>
-                  <td className="px-4 py-2 text-right font-mono text-xs">{usd.format(mudToUsd(row.costMud))}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{fmt.format(row.tokens)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{fmt.format(row.requests)}</td>
+                  <td className="px-4 py-2 text-right font-mono text-xs tabular-nums">{usd.format(mudToUsd(row.costMud))}</td>
                 </tr>
               ))}
             </tbody>
